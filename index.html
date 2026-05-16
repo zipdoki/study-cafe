@@ -359,6 +359,9 @@
         if (!res.ok) throw new Error();
         const text = await res.text();
         content.innerHTML = marked.parse(text);
+        content.querySelectorAll('img[src^="/"]').forEach(img => {
+          img.setAttribute('src', img.getAttribute('src').replace(/^\//, ''));
+        });
         content.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
         document.getElementById('content-wrap').scrollTop = 0;
       } catch {
