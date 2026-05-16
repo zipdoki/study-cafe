@@ -11,6 +11,7 @@ const WORKTREE_DIR = path.join(__dirname, 'pages-worktree');
 
 app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'docs')));
+app.use('/study-cafe', express.static(path.join(__dirname, 'docs')));
 // Serve images uploaded to pages-worktree
 app.use('/images', express.static(path.join(WORKTREE_DIR, 'images')));
 // Serve pages-worktree as read-only viewer for local testing

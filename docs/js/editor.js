@@ -10,7 +10,7 @@ import Table from 'https://esm.sh/@tiptap/extension-table@2';
 import TableRow from 'https://esm.sh/@tiptap/extension-table-row@2';
 import TableHeader from 'https://esm.sh/@tiptap/extension-table-header@2';
 import TableCell from 'https://esm.sh/@tiptap/extension-table-cell@2';
-import { TableUI } from '/js/tableUI.js';
+import { TableUI } from './tableUI.js';
 
 const LANGUAGES = [
   { value: '',           label: '언어 없음' },

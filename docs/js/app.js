@@ -15,6 +15,7 @@ import {
 
 const state = { currentFile: null, activeDir: null, isDirty: false };
 
+const BASE = new URL(document.baseURI).pathname;
 const $ = (id) => document.getElementById(id);
 const fileTreeEl      = $('file-tree');
 const pathDisplay     = $('file-path-display');
@@ -117,7 +118,7 @@ async function openFile(filePath) {
   btnSave.disabled = false;
   setStatus('');
 
-  history.pushState(null, '', '/' + filePath);
+  history.pushState(null, '', BASE + filePath);
 
   renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
   focusEditor();
@@ -297,14 +298,14 @@ function openDir(dirPath) {
   state.activeDir = dirPath;
   const items = findDirItems(fileTreeData, dirPath);
   showDirView(dirPath, items || []);
-  history.pushState(null, '', '/' + dirPath);
+  history.pushState(null, '', BASE + dirPath);
   renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
 }
 
 function openRootDir() {
   state.activeDir = '';
   showDirView('', fileTreeData);
-  history.pushState(null, '', '/');
+  history.pushState(null, '', BASE);
   renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
 }
 
@@ -461,7 +462,7 @@ btnWidth.addEventListener('click', () => {
 // ── URL navigation ────────────────────────────────────────
 
 async function openFromHash() {
-  const hash = decodeURIComponent(window.location.pathname.slice(1));
+  const hash = decodeURIComponent(window.location.pathname.slice(BASE.length));
   await refreshTree();
   if (!hash) return;
   if (hash.endsWith('.md')) await openFile(hash);
@@ -469,7 +470,7 @@ async function openFromHash() {
 }
 
 window.addEventListener('popstate', () => {
-  const hash = decodeURIComponent(window.location.pathname.slice(1));
+  const hash = decodeURIComponent(window.location.pathname.slice(BASE.length));
   if (!hash) return;
   if (hash.endsWith('.md')) { if (hash !== state.currentFile) openFile(hash); }
   else openDir(hash);
