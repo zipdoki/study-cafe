@@ -3,4 +3,4 @@
   
   
 
-![](/images/1778932911876.png)
+![](https://raw.githubusercontent.com/zipdoki/study-cafe/pages/images/1778932911876.png)
