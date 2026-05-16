@@ -954,6 +954,20 @@ html, body {
 #file-tree::-webkit-scrollbar-thumb,
 #editor-container::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
 
+/* Token button */
+#btn-token {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+#btn-token:hover { background: var(--hover-bg); opacity: 1; }
+#btn-token.no-token { opacity: 1; filter: drop-shadow(0 0 3px #e03e3e); }
+
 /* Hamburger menu button (hidden on desktop) */
 #btn-menu {
   display: none;

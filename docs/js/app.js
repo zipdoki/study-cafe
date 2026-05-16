@@ -24,6 +24,7 @@ const statusText      = $('status-text');
 const btnSave         = $('btn-save');
 const btnNew          = $('btn-new-file');
 btnNew.innerHTML      = ICON.plus;
+const btnToken        = $('btn-token');
 const editorContainer = $('editor-container');
 const dirView         = $('dir-view');
 const dirFilesGrid    = $('dir-files-grid');
@@ -42,12 +43,21 @@ function hhmm() {
 
 // ── Token helpers ──────────────────────────────────────────
 
+function updateTokenBtn() {
+  const btn = $('btn-token');
+  if (!btn) return;
+  const has = !!getToken();
+  btn.classList.toggle('no-token', !has);
+  btn.title = has ? 'GitHub 토큰 변경' : 'GitHub 토큰 필요';
+}
+
 async function ensureToken() {
   let token = getToken();
   if (token) return token;
   token = await showTokenInput();
   if (!token) throw new Error('cancelled');
   saveToken(token);
+  updateTokenBtn();
   return token;
 }
 
@@ -58,6 +68,7 @@ async function withToken(fn) {
   } catch (e) {
     if (e.message?.includes('Bad credentials') || e.message?.includes('401')) {
       clearToken();
+      updateTokenBtn();
       throw new Error('토큰이 유효하지 않습니다. 다시 시도해 주세요.');
     }
     throw e;
@@ -451,6 +462,14 @@ document.querySelector('.app-identity').addEventListener('click', openRootDir);
 btnSave.addEventListener('click', saveFile);
 btnNew.addEventListener('click', () => showInlineCreate(fileTreeEl, doCreateFile));
 $('btn-theme').addEventListener('click', (e) => buildThemePicker(e.currentTarget));
+btnToken.addEventListener('click', async () => {
+  const token = await showTokenInput();
+  if (!token) return;
+  saveToken(token);
+  updateTokenBtn();
+  await refreshTree();
+  if (!state.currentFile && !state.activeDir) openRootDir();
+});
 
 // ── Editor width toggle ─────────────────────────────────────
 
@@ -578,4 +597,21 @@ initEditor(
   },
 );
 
+async function handlePageResume() {
+  updateTokenBtn();
+  if (window.innerWidth <= 640) setSidebarCollapsed(true);
+  if (!getToken()) return;
+  await refreshTree();
+  if (!state.currentFile && !state.activeDir) openRootDir();
+  else if (state.currentFile) renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') handlePageResume();
+});
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) handlePageResume();
+});
+
+updateTokenBtn();
 openFromHash();
