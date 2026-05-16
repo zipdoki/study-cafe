@@ -323,12 +323,20 @@ function openRootDir() {
   renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
 }
 
-fileTreeEl.addEventListener('click', (e) => {
+function handleDirTap(e) {
   const header = e.target.closest('.tree-item.dir');
-  if (!header || e.target.closest('.tree-add-btn')) return;
+  if (!header || e.target.closest('.tree-add-btn') || e.target.closest('.tree-chevron')) return;
   const dirPath = header.dataset.dirPath;
   if (dirPath) openDir(dirPath);
-});
+}
+fileTreeEl.addEventListener('click', handleDirTap);
+fileTreeEl.addEventListener('touchend', (e) => {
+  const header = e.target.closest('.tree-item.dir');
+  if (!header || e.target.closest('.tree-add-btn') || e.target.closest('.tree-chevron')) return;
+  e.preventDefault();
+  const dirPath = header.dataset.dirPath;
+  if (dirPath) openDir(dirPath);
+}, { passive: false });
 
 // ── Rename via toolbar path ────────────────────────────────
 

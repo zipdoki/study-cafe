@@ -82,6 +82,11 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
         if (e.target.closest('.tree-delete-btn')) return;
         onFileClick(item.path);
       });
+      el.addEventListener('touchend', (e) => {
+        if (e.target.closest('.tree-delete-btn')) return;
+        e.preventDefault();
+        onFileClick(item.path);
+      }, { passive: false });
 
       // Double-click label → rename
       el.querySelector('.tree-label').addEventListener('dblclick', (e) => {
