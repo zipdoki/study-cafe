@@ -13,6 +13,8 @@ app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 // Serve images uploaded to pages-worktree
 app.use('/images', express.static(path.join(WORKTREE_DIR, 'images')));
+// Serve pages-worktree as read-only viewer for local testing
+app.use('/viewer', express.static(WORKTREE_DIR));
 
 const repoGit = simpleGit(REPO_DIR);
 
@@ -106,6 +108,17 @@ async function buildTree(dir) {
   });
 }
 
+// --- Manifest ---
+
+async function generateManifest() {
+  const tree = await buildTree(WORKTREE_DIR);
+  await fs.writeFile(
+    path.join(WORKTREE_DIR, 'manifest.json'),
+    JSON.stringify(tree, null, 2),
+    'utf-8'
+  );
+}
+
 // --- Push Helper ---
 
 async function pushPages(wt) {
@@ -166,7 +179,9 @@ app.put('/api/files/*', async (req, res) => {
     await fs.writeFile(full, content, 'utf-8');
 
     const wt = simpleGit(WORKTREE_DIR);
+    await generateManifest();
     await wt.add(rel);
+    await wt.add('manifest.json');
 
     const status = await wt.status();
     if (status.staged.length > 0) {
@@ -195,6 +210,8 @@ app.patch('/api/files/*', async (req, res) => {
 
     const wt = simpleGit(WORKTREE_DIR);
     await wt.raw(['mv', oldRel, newRel]);
+    await generateManifest();
+    await wt.add('manifest.json');
     await wt.commit(`Rename ${oldRel} to ${newRel}`);
     const pushResult = await pushPages(wt);
 
@@ -246,6 +263,8 @@ app.delete('/api/files/*', async (req, res) => {
     if (tracked) {
       // git rm handles both fs deletion and index staging
       await wt.raw(['rm', rel]);
+      await generateManifest();
+      await wt.add('manifest.json');
       await wt.commit(`Delete ${rel}`);
       const pushResult = await pushPages(wt);
       return res.json({ success: true, ...pushResult });
@@ -269,6 +288,7 @@ app.get('*', (req, res) => {
 async function start() {
   try {
     await initPagesWorktree();
+    await generateManifest();
     app.listen(PORT, () => {
       console.log(`\nStudy Cafe → http://localhost:${PORT}\n`);
     });
