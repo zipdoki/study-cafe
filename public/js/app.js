@@ -69,10 +69,11 @@ let fileTreeData = [];
 
 async function refreshTree() {
   try {
+    await ensureToken();
     fileTreeData = await fetchTree();
     renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
   } catch (e) {
-    console.error('Tree load failed:', e);
+    if (e.message !== 'cancelled') console.error('Tree load failed:', e);
   }
 }
 
@@ -92,8 +93,10 @@ async function openFile(filePath) {
 
   let content;
   try {
+    await ensureToken();
     content = await fetchFile(filePath);
   } catch (e) {
+    if (e.message === 'cancelled') return;
     setStatus('파일 열기 실패', 'error');
     return;
   }
@@ -116,7 +119,7 @@ async function openFile(filePath) {
 
   history.pushState(null, '', '/' + filePath);
 
-  await refreshTree();
+  renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
   focusEditor();
 }
 
@@ -295,14 +298,14 @@ function openDir(dirPath) {
   const items = findDirItems(fileTreeData, dirPath);
   showDirView(dirPath, items || []);
   history.pushState(null, '', '/' + dirPath);
-  refreshTree();
+  renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
 }
 
 function openRootDir() {
   state.activeDir = '';
   showDirView('', fileTreeData);
   history.pushState(null, '', '/');
-  refreshTree();
+  renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
 }
 
 fileTreeEl.addEventListener('click', (e) => {
