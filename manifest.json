@@ -1,0 +1,26 @@
+[
+  {
+    "name": "books",
+    "path": "books",
+    "type": "dir",
+    "children": [
+      {
+        "name": "sql_recipes",
+        "path": "books/sql_recipes",
+        "type": "dir",
+        "children": [
+          {
+            "name": "chapter1.md",
+            "path": "books/sql_recipes/chapter1.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "path": "books/sql_recipes/README.md",
+            "type": "file"
+          }
+        ]
+      }
+    ]
+  }
+]

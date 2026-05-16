@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>study cafe</title>
+  <link rel="icon" href="https://avatars.githubusercontent.com/u/112409928">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sidebar-width: 260px;
+      --sidebar-bg: #f7f7f5;
+      --sidebar-border: #e8e8e5;
+      --text-primary: #37352f;
+      --text-secondary: #9b9a97;
+      --accent: #2383e2;
+      --border: #e9e9e7;
+      --hover-bg: #ebebea;
+      --active-bg: #e3e2df;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+      color: var(--text-primary);
+      background: #fff;
+    }
+
+    #app { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: var(--sidebar-width);
+      min-width: var(--sidebar-width);
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--sidebar-border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 0.15s, min-width 0.15s;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--sidebar-border);
+      flex-shrink: 0;
+    }
+
+    .app-identity { display: flex; align-items: center; gap: 7px; }
+    .app-avatar { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+    .app-title { font-size: 14px; font-weight: 600; }
+
+    #btn-collapse {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-secondary);
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #btn-collapse:hover { background: var(--hover-bg); color: var(--text-primary); }
+
+    #file-tree { flex: 1; overflow-y: auto; padding: 6px 0; }
+
+    .tree-empty { padding: 12px 16px; font-size: 13px; color: #aaa; }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      font-size: 13.5px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 0 6px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      user-select: none;
+    }
+    .tree-item:hover { background: var(--hover-bg); }
+    .tree-item.active { background: var(--active-bg); font-weight: 500; }
+
+    .tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .tree-children { padding-left: 14px; }
+
+    .tree-chevron {
+      flex-shrink: 0;
+      color: #aaa;
+      display: block;
+      padding: 4px;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    .tree-chevron:hover { background: rgba(0,0,0,0.08); }
+    .tree-icon-svg { flex-shrink: 0; display: block; }
+
+    /* ── Sidebar resizer ── */
+    #sidebar-resizer {
+      width: 4px;
+      flex-shrink: 0;
+      cursor: col-resize;
+      background: transparent;
+      transition: background 0.15s;
+      position: relative;
+      z-index: 10;
+    }
+    #sidebar-resizer:hover, #sidebar-resizer.dragging { background: var(--accent); }
+
+    /* ── Collapsed sidebar ── */
+    #app.sidebar-collapsed #sidebar {
+      width: 0 !important;
+      min-width: 0 !important;
+      overflow: hidden;
+      border-right: none;
+    }
+    #app.sidebar-collapsed #sidebar-resizer {
+      width: 20px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--sidebar-border);
+      cursor: pointer;
+    }
+    #app.sidebar-collapsed #sidebar-resizer::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px;
+      height: 14px;
+      background: url("data:image/svg+xml,%3Csvg width='14' height='14' viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 3L9 7L5 11' stroke='%23999' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+
+    /* ── Main ── */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+    #content-wrap { flex: 1; overflow-y: auto; }
+
+    #content {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 52px 96px 120px;
+    }
+
+    /* ── Markdown content styles ── */
+    #content > * + * { margin-top: 0.5em; }
+
+    #content p {
+      line-height: 1.65;
+      font-size: 16px;
+      color: var(--text-primary);
+    }
+
+    #content h1 { font-size: 2em; font-weight: 700; line-height: 1.2; margin-top: 1.4em; margin-bottom: 0.2em; }
+    #content h2 { font-size: 1.5em; font-weight: 600; line-height: 1.25; margin-top: 1.2em; margin-bottom: 0.15em; }
+    #content h3 { font-size: 1.25em; font-weight: 600; margin-top: 1em; margin-bottom: 0.1em; }
+    #content h4, #content h5, #content h6 { font-size: 1em; font-weight: 600; margin-top: 0.8em; }
+
+    #content ul, #content ol { padding-left: 1.5em; }
+    #content li { line-height: 1.65; }
+    #content li + li { margin-top: 0.1em; }
+
+    #content blockquote {
+      border-left: 3px solid #d4d4d0;
+      margin: 0.6em 0;
+      padding: 0.15em 1em;
+      color: var(--text-secondary);
+    }
+
+    #content code {
+      background: rgba(135, 131, 120, 0.15);
+      border-radius: 3px;
+      padding: 0.1em 0.35em;
+      font-size: 0.88em;
+      font-family: 'SFMono-Regular', 'Fira Code', Consolas, monospace;
+    }
+
+    #content pre {
+      background: #f6f8fa;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      padding: 1em 1.2em;
+      overflow-x: auto;
+      margin: 0.8em 0;
+    }
+    #content pre code {
+      background: none;
+      padding: 0;
+      font-size: 0.85em;
+      color: inherit;
+    }
+
+    #content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.5em 0;
+    }
+
+    #content img { display: block; max-width: 100%; border-radius: 4px; margin: 0.8em 0; }
+
+    #content a { color: var(--accent); text-decoration: none; }
+    #content a:hover { text-decoration: underline; }
+
+    #content table {
+      border-collapse: collapse;
+      width: 100%;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      margin: 0.8em 0;
+    }
+    #content table th,
+    #content table td {
+      border: 1px solid var(--border);
+      padding: 7px 12px;
+      vertical-align: top;
+    }
+    #content table th {
+      background: #f7f7f5;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .placeholder { font-size: 14px; color: #aaa; font-style: italic; }
+
+    /* ── Scrollbars ── */
+    #file-tree::-webkit-scrollbar,
+    #content-wrap::-webkit-scrollbar { width: 6px; }
+    #file-tree::-webkit-scrollbar-track,
+    #content-wrap::-webkit-scrollbar-track { background: transparent; }
+    #file-tree::-webkit-scrollbar-thumb,
+    #content-wrap::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <div class="app-identity">
+          <img class="app-avatar" src="https://avatars.githubusercontent.com/u/112409928" alt="">
+          <span class="app-title">study cafe</span>
+        </div>
+        <button id="btn-collapse" title="사이드바 접기">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M9 3L5 7L9 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <div id="file-tree"></div>
+    </aside>
+
+    <div id="sidebar-resizer"></div>
+
+    <main id="main">
+      <div id="content-wrap">
+        <div id="content"><p class="placeholder">파일을 선택하세요</p></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11/lib/highlight.min.js"></script>
+  <script>
+    const CHEVRON_DOWN = `<svg class="tree-chevron" width="17" height="17" viewBox="0 0 10 10" fill="none">
+      <path d="M2 3.5L5 6.5L8 3.5" stroke="#666" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+    const CHEVRON_RIGHT = `<svg class="tree-chevron" width="17" height="17" viewBox="0 0 10 10" fill="none">
+      <path d="M3.5 2L6.5 5L3.5 8" stroke="#666" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+    const FOLDER = `<svg class="tree-icon-svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M1.5 4.5C1.5 3.948 1.948 3.5 2.5 3.5H6.086L7.293 4.707A1 1 0 008 5H13.5C14.052 5 14.5 5.448 14.5 6V12C14.5 12.552 14.052 13 13.5 13H2.5C1.948 13 1.5 12.552 1.5 12V4.5Z" fill="#4A90E2"/>
+    </svg>`;
+    const FILE = `<svg class="tree-icon-svg" width="14" height="16" viewBox="0 0 14 16" fill="none">
+      <path d="M2 1.5H8.5L12.5 5.5V14.5H2V1.5Z" fill="#ffffff" stroke="#bbb" stroke-width="0.8"/>
+      <path d="M8.5 1.5V5.5H12.5" stroke="#bbb" stroke-width="0.8" fill="none"/>
+    </svg>`;
+
+    async function init() {
+      setupSidebar();
+      setupResizer();
+
+      try {
+        const res = await fetch('manifest.json');
+        if (!res.ok) throw new Error();
+        const tree = await res.json();
+        renderTree(tree, document.getElementById('file-tree'));
+      } catch {
+        document.getElementById('file-tree').innerHTML =
+          '<div class="tree-empty">저장된 파일이 없습니다</div>';
+      }
+
+      const hash = decodeURIComponent(location.hash.slice(1));
+      if (hash) openFile(hash);
+    }
+
+    function renderTree(items, container) {
+      container.innerHTML = '';
+      if (!items || !items.length) {
+        container.innerHTML = '<div class="tree-empty">파일 없음</div>';
+        return;
+      }
+      renderItems(items, container);
+    }
+
+    function renderItems(items, container) {
+      for (const item of items) {
+        if (item.type === 'dir') {
+          const block = document.createElement('div');
+          block.className = 'tree-dir-block';
+
+          const header = document.createElement('div');
+          header.className = 'tree-item dir';
+          header.innerHTML = `${CHEVRON_DOWN}${FOLDER}<span class="tree-label">${esc(item.name)}</span>`;
+
+          const children = document.createElement('div');
+          children.className = 'tree-children';
+          renderItems(item.children || [], children);
+
+          let collapsed = false;
+          header.addEventListener('click', () => {
+            collapsed = !collapsed;
+            children.style.display = collapsed ? 'none' : '';
+            header.querySelector('.tree-chevron').outerHTML = collapsed ? CHEVRON_RIGHT : CHEVRON_DOWN;
+          });
+
+          block.appendChild(header);
+          block.appendChild(children);
+          container.appendChild(block);
+        } else {
+          const el = document.createElement('div');
+          el.className = 'tree-item file';
+          el.dataset.path = item.path;
+          el.innerHTML = `${FILE}<span class="tree-label">${esc(item.name)}</span>`;
+          el.addEventListener('click', () => openFile(item.path));
+          container.appendChild(el);
+        }
+      }
+    }
+
+    async function openFile(filePath) {
+      document.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
+      const treeEl = document.querySelector(`.tree-item[data-path="${CSS.escape(filePath)}"]`);
+      if (treeEl) treeEl.classList.add('active');
+
+      history.replaceState(null, '', '#' + encodeURIComponent(filePath));
+
+      const content = document.getElementById('content');
+      content.innerHTML = '<p class="placeholder">로딩 중...</p>';
+
+      try {
+        const res = await fetch(filePath);
+        if (!res.ok) throw new Error();
+        const text = await res.text();
+        content.innerHTML = marked.parse(text);
+        content.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+        document.getElementById('content-wrap').scrollTop = 0;
+      } catch {
+        content.innerHTML = '<p class="placeholder">파일을 불러올 수 없습니다</p>';
+      }
+    }
+
+    function setupSidebar() {
+      document.getElementById('btn-collapse').addEventListener('click', () => {
+        document.getElementById('app').classList.toggle('sidebar-collapsed');
+      });
+      document.getElementById('sidebar-resizer').addEventListener('click', () => {
+        if (document.getElementById('app').classList.contains('sidebar-collapsed')) {
+          document.getElementById('app').classList.remove('sidebar-collapsed');
+        }
+      });
+    }
+
+    function setupResizer() {
+      const resizer = document.getElementById('sidebar-resizer');
+      let isResizing = false;
+      resizer.addEventListener('mousedown', (e) => {
+        if (document.getElementById('app').classList.contains('sidebar-collapsed')) return;
+        isResizing = true;
+        resizer.classList.add('dragging');
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        const w = Math.max(120, Math.min(600, e.clientX));
+        document.documentElement.style.setProperty('--sidebar-width', w + 'px');
+      });
+      document.addEventListener('mouseup', () => {
+        isResizing = false;
+        resizer.classList.remove('dragging');
+      });
+    }
+
+    function esc(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    init();
+  </script>
+</body>
+</html>
