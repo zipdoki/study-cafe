@@ -75,7 +75,7 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
       const el = document.createElement('div');
       el.className = `tree-item file${item.path === activeFile ? ' active' : ''}`;
       el.dataset.path = item.path;
-      el.draggable = true;
+      el.draggable = !('ontouchstart' in window);
       el.innerHTML = `${ICON.file}<span class="tree-label">${esc(item.name)}</span><button class="tree-delete-btn" title="삭제">×</button>`;
 
       el.addEventListener('click', (e) => {

@@ -120,6 +120,7 @@ async function openFile(filePath) {
 
   history.pushState(null, '', BASE + filePath);
 
+  if (window.innerWidth <= 640) setSidebarCollapsed(true);
   renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
   focusEditor();
 }
@@ -299,6 +300,7 @@ function openDir(dirPath) {
   const items = findDirItems(fileTreeData, dirPath);
   showDirView(dirPath, items || []);
   history.pushState(null, '', BASE + dirPath);
+  if (window.innerWidth <= 640) setSidebarCollapsed(true);
   renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
 }
 
@@ -494,6 +496,7 @@ if (localStorage.getItem('sc-sidebar-collapsed') === 'true') {
   appEl.classList.add('sidebar-collapsed');
   btnCollapse.innerHTML = ICON.sidebarOpen;
 }
+if (window.innerWidth <= 640) setSidebarCollapsed(true);
 
 function setSidebarCollapsed(collapsed) {
   appEl.classList.toggle('sidebar-collapsed', collapsed);
