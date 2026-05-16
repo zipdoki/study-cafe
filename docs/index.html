@@ -54,6 +54,10 @@
     </main>
   </div>
 
+  <script>
+    const p = sessionStorage.getItem('spaPath');
+    if (p) { sessionStorage.removeItem('spaPath'); history.replaceState(null, '', p); }
+  </script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
