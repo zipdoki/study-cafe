@@ -133,6 +133,7 @@ html, body {
   white-space: nowrap;
   text-overflow: ellipsis;
   user-select: none;
+  touch-action: manipulation;
 }
 .tree-item:hover { background: var(--hover-bg); }
 .tree-item.active { background: var(--active-bg); font-weight: 500; }
