@@ -954,8 +954,34 @@ html, body {
 #file-tree::-webkit-scrollbar-thumb,
 #editor-container::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
 
+/* Hamburger menu button (hidden on desktop) */
+#btn-menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  /*width: 32px;*/
+  height: 32px;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+#btn-menu:hover { background: var(--hover-bg); color: var(--text-primary); }
+
+/* Sidebar backdrop (mobile only) */
+#sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: rgba(0, 0, 0, 0.3);
+}
+
 /* Mobile */
 @media (max-width: 640px) {
+  #btn-menu { display: flex; }
   #sidebar {
     position: absolute;
     z-index: 100;

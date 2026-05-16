@@ -289,8 +289,8 @@ function showDirView(dirPath, items) {
   state.currentFile = null;
   btnSave.disabled = true;
   setStatus('');
-  pathDisplay.textContent = dirPath ? dirPath + '/' : 'Pages';
-  pathDisplay.classList.remove('placeholder');
+  pathDisplay.textContent = dirPath ? dirPath + '/' : '';
+  pathDisplay.classList.toggle('placeholder', !dirPath);
   renderDirGrid(items);
 }
 
@@ -308,6 +308,7 @@ function openRootDir() {
   state.activeDir = '';
   showDirView('', fileTreeData);
   history.pushState(null, '', BASE);
+  if (window.innerWidth <= 640) setSidebarCollapsed(true);
   renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
 }
 
@@ -466,7 +467,7 @@ btnWidth.addEventListener('click', () => {
 async function openFromHash() {
   const hash = decodeURIComponent(window.location.pathname.slice(BASE.length));
   await refreshTree();
-  if (!hash) return;
+  if (!hash) { openRootDir(); return; }
   if (hash.endsWith('.md')) await openFile(hash);
   else openDir(hash);
 }
@@ -485,6 +486,8 @@ const resizerEl   = $('sidebar-resizer');
 const appEl       = document.getElementById('app');
 const btnCollapse = $('btn-collapse-sidebar');
 btnCollapse.innerHTML = ICON.sidebarClose;
+const btnMenu = $('btn-menu');
+btnMenu.innerHTML = ICON.sidebarOpen;
 
 const savedSidebarWidth = localStorage.getItem('sc-sidebar-width');
 if (savedSidebarWidth) {
@@ -502,11 +505,15 @@ function setSidebarCollapsed(collapsed) {
   appEl.classList.toggle('sidebar-collapsed', collapsed);
   btnCollapse.innerHTML = collapsed ? ICON.sidebarOpen : ICON.sidebarClose;
   localStorage.setItem('sc-sidebar-collapsed', collapsed);
+  const backdrop = $('sidebar-backdrop');
+  if (backdrop) backdrop.style.display = (!collapsed && window.innerWidth <= 640) ? 'block' : 'none';
 }
 
 btnCollapse.addEventListener('click', () => {
   setSidebarCollapsed(!appEl.classList.contains('sidebar-collapsed'));
 });
+btnMenu.addEventListener('click', () => setSidebarCollapsed(false));
+$('sidebar-backdrop').addEventListener('click', () => setSidebarCollapsed(true));
 
 resizerEl.addEventListener('click', () => {
   if (appEl.classList.contains('sidebar-collapsed')) setSidebarCollapsed(false);
