@@ -675,6 +675,36 @@ html, body {
 .slash-menu-desc  { font-size: 11px; color: var(--text-secondary); }
 
 /* ── Mermaid block ── */
+/* ── TOC Block ── */
+.toc-block {
+  border: 1px solid #e1e4e8;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 0.8em 0;
+  user-select: none;
+}
+.toc-header {
+  background: #f0f2f5;
+  border-bottom: 1px solid #e1e4e8;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+}
+.toc-list { padding: 12px 18px; }
+.toc-item {
+  padding: 7px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.toc-item:hover { text-decoration: underline; }
+.toc-h1 { font-weight: 800; }
+.toc-h2 { font-weight: 800; }
+.toc-h3 { font-size: 13px; }
+.toc-empty { padding: 8px 16px; font-size: 13px; font-style: italic; }
+
 .mermaid-block {
   border: 1px solid #e1e4e8;
   border-radius: 8px;

@@ -150,7 +150,7 @@ const CodeBlockWithLang = CodeBlockLowlight.extend({
 // ── Gap cursor class toggle (for caret-color: transparent) ──
 
 // 블록 요소 다음에 항상 빈 단락 보장 → gap cursor 문제 근본 해결
-const BLOCK_NEEDS_PARAGRAPH = new Set(['image', 'table', 'mermaidBlock', 'codeBlock']);
+const BLOCK_NEEDS_PARAGRAPH = new Set(['image', 'table', 'mermaidBlock', 'codeBlock', 'tocBlock']);
 
 const EnsureParagraphAfterBlock = Extension.create({
   name: 'ensureParagraphAfterBlock',
@@ -248,6 +248,17 @@ const SLASH_COMMANDS = [
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range)
         .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+        .run();
+    },
+  },
+  {
+    name: 'toc',
+    label: '목차',
+    description: '문서의 제목으로 목차 자동 생성',
+    icon: '≡',
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range)
+        .insertContent({ type: 'tocBlock' })
         .run();
     },
   },
@@ -491,6 +502,81 @@ const MermaidBlock = Node.create({
   },
 });
 
+// ── Table of Contents Block ────────────────────────────────
+
+const TocBlock = Node.create({
+  name: 'tocBlock',
+  group: 'block',
+  atom: true,
+  draggable: false,
+
+  parseHTML() { return [{ tag: 'div[data-type="toc"]' }]; },
+  renderHTML() { return ['div', { 'data-type': 'toc' }]; },
+
+  addNodeView() {
+    return ({ editor }) => {
+      const dom = document.createElement('div');
+      dom.className = 'toc-block';
+      dom.contentEditable = 'false';
+
+      const header = document.createElement('div');
+      header.className = 'toc-header';
+      header.textContent = '목차';
+
+      const list = document.createElement('div');
+      list.className = 'toc-list';
+
+      dom.appendChild(header);
+      dom.appendChild(list);
+
+      function render() {
+        list.innerHTML = '';
+        const headings = [];
+        editor.state.doc.forEach(node => {
+          if (node.type.name === 'heading')
+            headings.push({ level: node.attrs.level, text: node.textContent });
+        });
+
+        if (!headings.length) {
+          const empty = document.createElement('div');
+          empty.className = 'toc-empty';
+          empty.textContent = '제목을 추가하면 목차가 생성됩니다';
+          list.appendChild(empty);
+          return;
+        }
+
+        headings.forEach(({ level, text }) => {
+          const item = document.createElement('div');
+          item.className = `toc-item toc-h${level}`;
+          item.textContent = text;
+          item.style.paddingLeft = `${(level - 1) * 16}px`;
+          item.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const els = editor.view.dom.querySelectorAll(`h${level}`);
+            for (const el of els) {
+              if (el.textContent.trim() === text) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                break;
+              }
+            }
+          });
+          list.appendChild(item);
+        });
+      }
+
+      render();
+      editor.on('update', render);
+
+      return {
+        dom,
+        stopEvent: () => true,
+        ignoreMutation: () => true,
+        destroy() { editor.off('update', render); },
+      };
+    };
+  },
+});
+
 let editor = null;
 let imageUploadFn = null;
 
@@ -516,6 +602,7 @@ export function initEditor(onUpdate, onSelectionUpdate, onImageUpload, onSave) {
       SaveShortcut,
       CodeBlockWithLang,
       MermaidBlock,
+      TocBlock,
       SlashCommands,
       EnsureParagraphAfterBlock,
       MarkdownTableInput,
@@ -572,10 +659,12 @@ function fileToBase64(file) {
 export function setContent(markdownContent) {
   if (!editor) return;
   // Pre-process: ```mermaid blocks → custom div (before marked parses)
-  const processed = (markdownContent || '').replace(
-    /```mermaid\n([\s\S]*?)```/g,
-    (_, code) => `<div data-type="mermaid" data-code="${encodeURIComponent(code.trim())}"></div>`,
-  );
+  const processed = (markdownContent || '')
+    .replace(/<!-- toc -->/g, '<div data-type="toc"></div>')
+    .replace(
+      /```mermaid\n([\s\S]*?)```/g,
+      (_, code) => `<div data-type="mermaid" data-code="${encodeURIComponent(code.trim())}"></div>`,
+    );
   const html = window.marked ? window.marked.parse(processed) : processed;
   editor.commands.setContent(html, false);
 }
@@ -613,6 +702,11 @@ export function getMarkdown() {
   td.addRule('strikethrough', {
     filter: ['del', 's', 'strike'],
     replacement: (c) => `~~${c}~~`,
+  });
+
+  td.addRule('toc', {
+    filter: (node) => node.nodeType === 1 && node.getAttribute('data-type') === 'toc',
+    replacement: () => '\n\n<!-- toc -->\n\n',
   });
 
   td.addRule('mermaid', {
