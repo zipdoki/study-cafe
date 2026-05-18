@@ -123,6 +123,7 @@ export async function fetchFile(path, token) {
   });
   if (!res.ok) throw new Error('파일 로드 실패');
   const data = await res.json();
+  if (data.sha) shaCache[path] = data.sha;
   return b64decode(data.content);
 }
 
@@ -137,7 +138,7 @@ async function getSha(path, token) {
   return d.sha;
 }
 
-export async function saveFile(path, content, token) {
+export async function saveFile(path, content, token, _retry = false) {
   const sha = await getSha(path, token);
   const body = {
     message: sha ? `Update ${path}` : `Create ${path}`,
@@ -152,7 +153,13 @@ export async function saveFile(path, content, token) {
     body: JSON.stringify(body),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || '저장 실패');
+  if (!res.ok) {
+    if (!_retry && (data.message || '').includes('does not match')) {
+      delete shaCache[path];
+      return saveFile(path, content, token, true);
+    }
+    throw new Error(data.message || '저장 실패');
+  }
   if (data.content?.sha) shaCache[path] = data.content.sha;
 }
 
