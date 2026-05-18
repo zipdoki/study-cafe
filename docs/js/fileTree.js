@@ -78,9 +78,12 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
       el.draggable = !('ontouchstart' in window);
       el.innerHTML = `${ICON.file}<span class="tree-label">${esc(item.name)}</span><button class="tree-delete-btn" title="삭제">×</button>`;
 
+      let clickTimer = null;
+
       el.addEventListener('click', (e) => {
         if (e.target.closest('.tree-delete-btn')) return;
-        onFileClick(item.path);
+        clearTimeout(clickTimer);
+        clickTimer = setTimeout(() => { clickTimer = null; onFileClick(item.path); }, 250);
       });
       el.addEventListener('touchend', (e) => {
         if (e.target.closest('.tree-delete-btn')) return;
@@ -91,6 +94,8 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
       // Double-click label → rename
       el.querySelector('.tree-label').addEventListener('dblclick', (e) => {
         e.stopPropagation();
+        clearTimeout(clickTimer);
+        clickTimer = null;
         startRename(e.target, item.name, (newName) => onRename(item.path, newName, 'file'));
       });
 
