@@ -191,6 +191,22 @@ function isSeparatorRow(cells) {
   return cells.every(c => /^[-: ]+$/.test(c));
 }
 
+const ListItemBackspace = Extension.create({
+  name: 'listItemBackspace',
+  addKeyboardShortcuts() {
+    return {
+      Backspace: () => {
+        const { state } = this.editor;
+        const { $from, empty } = state.selection;
+        if (empty && $from.parentOffset === 0 && $from.node(-1)?.type.name === 'listItem') {
+          return this.editor.commands.liftListItem('listItem');
+        }
+        return false;
+      },
+    };
+  },
+});
+
 const MarkdownTableInput = Extension.create({
   name: 'markdownTableInput',
   addKeyboardShortcuts() {
@@ -603,6 +619,7 @@ export function initEditor(onUpdate, onSelectionUpdate, onImageUpload, onSave) {
       CodeBlockWithLang,
       MermaidBlock,
       TocBlock,
+      ListItemBackspace,
       SlashCommands,
       EnsureParagraphAfterBlock,
       MarkdownTableInput,
