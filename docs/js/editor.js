@@ -494,8 +494,18 @@ const MermaidBlock = Node.create({
 let editor = null;
 let imageUploadFn = null;
 
-export function initEditor(onUpdate, onSelectionUpdate, onImageUpload) {
+export function initEditor(onUpdate, onSelectionUpdate, onImageUpload, onSave) {
   imageUploadFn = onImageUpload || null;
+
+  const SaveShortcut = Extension.create({
+    name: 'saveShortcut',
+    addKeyboardShortcuts() {
+      return {
+        'Mod-Enter': () => { onSave?.(); return true; },
+      };
+    },
+  });
+
   editor = new Editor({
     element: document.getElementById('editor'),
     editorProps: {
@@ -503,6 +513,7 @@ export function initEditor(onUpdate, onSelectionUpdate, onImageUpload) {
     },
     extensions: [
       StarterKit.configure({ codeBlock: false }),
+      SaveShortcut,
       CodeBlockWithLang,
       MermaidBlock,
       SlashCommands,

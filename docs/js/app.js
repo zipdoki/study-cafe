@@ -402,7 +402,7 @@ pathInput.addEventListener('blur', async () => {
 // ── Keyboard shortcut ──────────────────────────────────────
 
 document.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'Enter')) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 's') {
     e.preventDefault();
     if (!btnSave.disabled) saveFile();
   }
@@ -617,6 +617,7 @@ initEditor(
     const imgPath = await ghUpload(base64, ext, token);
     return `${RAW_BASE}/${imgPath}`;
   },
+  () => { if (!btnSave.disabled) saveFile(); },
 );
 
 async function handlePageResume() {
