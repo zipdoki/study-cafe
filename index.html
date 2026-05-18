@@ -282,15 +282,41 @@
       <path d="M8.5 1.5V5.5H12.5" stroke="#bbb" stroke-width="0.8" fill="none"/>
     </svg>`;
 
+    const REPO = 'zipdoki/study-cafe';
+    const BRANCH = 'pages';
+
+    function buildTree(items) {
+      const map = {};
+      const root = [];
+      const neededDirs = new Set();
+      for (const item of items) {
+        if (item.type === 'blob' && item.path.endsWith('.md')) {
+          const parts = item.path.split('/');
+          for (let i = 1; i < parts.length; i++) neededDirs.add(parts.slice(0, i).join('/'));
+        }
+      }
+      for (const d of neededDirs) map[d] = { name: d.split('/').pop(), path: d, type: 'dir', children: [] };
+      for (const item of items) {
+        if (item.type === 'blob' && item.path.endsWith('.md'))
+          map[item.path] = { name: item.path.split('/').pop(), path: item.path, type: 'file' };
+      }
+      for (const [p, node] of Object.entries(map)) {
+        const parts = p.split('/');
+        if (parts.length === 1) root.push(node);
+        else { const pp = parts.slice(0, -1).join('/'); (map[pp] || { children: root }).children.push(node); }
+      }
+      return root;
+    }
+
     async function init() {
       setupSidebar();
       setupResizer();
 
       try {
-        const res = await fetch('tree.json', { cache: 'no-cache' });
+        const res = await fetch(`https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`);
         if (!res.ok) throw new Error();
-        const tree = await res.json();
-        renderTree(tree, document.getElementById('file-tree'));
+        const data = await res.json();
+        renderTree(buildTree(data.tree || []), document.getElementById('file-tree'));
       } catch {
         document.getElementById('file-tree').innerHTML =
           '<div class="tree-empty">저장된 파일이 없습니다</div>';
