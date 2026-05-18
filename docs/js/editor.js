@@ -191,17 +191,18 @@ function isSeparatorRow(cells) {
   return cells.every(c => /^[-: ]+$/.test(c));
 }
 
-const ListItemBackspace = Extension.create({
-  name: 'listItemBackspace',
+const ListItemKeys = Extension.create({
+  name: 'listItemKeys',
   addKeyboardShortcuts() {
     return {
       Backspace: () => {
         const { state } = this.editor;
         const { $from, empty } = state.selection;
-        if (empty && $from.parentOffset === 0 && $from.node(-1)?.type.name === 'listItem') {
-          return this.editor.commands.liftListItem('listItem');
-        }
-        return false;
+        if (!empty || $from.parentOffset !== 0) return false;
+        if ($from.node(-1)?.type.name !== 'listItem') return false;
+        // 첫 번째 아이템만 lift, 나머지는 ProseMirror 기본 joinBackward에 위임
+        if ($from.index(-2) !== 0) return false;
+        return this.editor.commands.liftListItem('listItem');
       },
     };
   },
@@ -612,6 +613,61 @@ export function initEditor(onUpdate, onSelectionUpdate, onImageUpload, onSave) {
     element: document.getElementById('editor'),
     editorProps: {
       attributes: { spellcheck: 'false' },
+      handleKeyDown(view, event) {
+        if (event.key === 'Tab' && !event.metaKey && !event.ctrlKey) {
+          const { $from } = view.state.selection;
+          if ($from.node(-1)?.type.name === 'listItem') {
+            event.preventDefault();
+            if (event.shiftKey) {
+              editor.commands.liftListItem('listItem');
+            } else {
+              const didSink = editor.commands.sinkListItem('listItem');
+              if (!didSink) {
+                editor.chain()
+                  .command(({ tr, state, dispatch }) => {
+                    const { schema } = state;
+                    const { $from } = state.selection;
+                    const d = $from.depth;
+                    const listNode = $from.node(d - 2);
+                    const listStart = $from.before(d - 2);
+                    const parentNode = $from.node(d - 3);
+                    const listIndex = $from.index(d - 3);
+                    const firstListItem = listNode.firstChild;
+                    const newNestedList = listNode.type.create(null, firstListItem);
+
+                    if (listIndex > 0) {
+                      const prev = parentNode.child(listIndex - 1);
+                      if (prev.type.name === 'bulletList' || prev.type.name === 'orderedList') {
+                        // 이전 리스트의 마지막 아이템 안으로 중첩
+                        const insertPos = listStart - 2;
+                        if (!dispatch) return true;
+                        const shift = newNestedList.nodeSize;
+                        let t = tr.insert(insertPos, newNestedList);
+                        if (listNode.childCount === 1) {
+                          t = t.delete(listStart + shift, listStart + shift + listNode.nodeSize);
+                        } else {
+                          t = t.delete(listStart + shift + 1, listStart + shift + 1 + firstListItem.nodeSize);
+                        }
+                        dispatch(t);
+                        return true;
+                      }
+                    }
+
+                    // 이전 리스트 없음: 빈 아이템 삽입 후 sink
+                    const itemPos = $from.before(d - 1);
+                    const newItem = schema.nodes.listItem.create(null, schema.nodes.paragraph.create());
+                    if (dispatch) dispatch(tr.insert(itemPos, newItem));
+                    return true;
+                  })
+                  .sinkListItem('listItem')
+                  .run();
+              }
+            }
+            return true;
+          }
+        }
+        return false;
+      },
     },
     extensions: [
       StarterKit.configure({ codeBlock: false }),
@@ -619,7 +675,7 @@ export function initEditor(onUpdate, onSelectionUpdate, onImageUpload, onSave) {
       CodeBlockWithLang,
       MermaidBlock,
       TocBlock,
-      ListItemBackspace,
+      ListItemKeys,
       SlashCommands,
       EnsureParagraphAfterBlock,
       MarkdownTableInput,
