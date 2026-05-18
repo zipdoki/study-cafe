@@ -81,11 +81,10 @@ let fileTreeData = [];
 
 async function refreshTree() {
   try {
-    await ensureToken();
     fileTreeData = await fetchTree();
     renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
   } catch (e) {
-    if (e.message !== 'cancelled') console.error('Tree load failed:', e);
+    console.error('Tree load failed:', e);
   }
 }
 
@@ -105,10 +104,8 @@ async function openFile(filePath) {
 
   let content;
   try {
-    await ensureToken();
     content = await fetchFile(filePath);
   } catch (e) {
-    if (e.message === 'cancelled') return;
     setStatus('파일 열기 실패', 'error');
     return;
   }
@@ -117,7 +114,7 @@ async function openFile(filePath) {
   state.activeDir = null;
   state.isDirty = false;
 
-  setContent(content);
+  setContent(content.replace(/\(\/images\//g, `(${RAW_BASE}/images/`));
 
   editorContainer.style.display = '';
   dirView.style.display = 'none';
@@ -608,7 +605,6 @@ initEditor(
 async function handlePageResume() {
   updateTokenBtn();
   if (window.innerWidth <= 640) setSidebarCollapsed(true);
-  if (!getToken()) return;
   await refreshTree();
   if (!state.currentFile && !state.activeDir) openRootDir();
   else if (state.currentFile) renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);

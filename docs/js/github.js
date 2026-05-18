@@ -5,6 +5,7 @@ const BASE = 'https://api.github.com';
 export const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/${BRANCH}`;
 
 const shaCache = {};
+let flatTree = [];
 
 export function getToken() {
   return localStorage.getItem('sc-github-token') || null;
@@ -45,27 +46,26 @@ function b64encode(str) {
   return btoa(bin);
 }
 
-function buildTree(flatItems) {
+function buildTree(items) {
   const map = {};
   const root = [];
   const neededDirs = new Set();
 
-  for (const item of flatItems) {
+  for (const item of items) {
     if (item.type === 'blob' && item.path.endsWith('.md')) {
-      shaCache[item.path] = item.sha;
+      if (item.sha) shaCache[item.path] = item.sha;
       const parts = item.path.split('/');
       for (let i = 1; i < parts.length; i++) {
         neededDirs.add(parts.slice(0, i).join('/'));
       }
     }
-    if (item.type === 'tree') shaCache[item.path] = item.sha;
   }
 
   for (const dirPath of neededDirs) {
     map[dirPath] = { name: dirPath.split('/').pop(), path: dirPath, type: 'dir', children: [] };
   }
 
-  for (const item of flatItems) {
+  for (const item of items) {
     if (item.type === 'blob' && item.path.endsWith('.md')) {
       map[item.path] = { name: item.path.split('/').pop(), path: item.path, type: 'file' };
     }
@@ -94,26 +94,53 @@ function sortTree(items) {
     .map(item => item.type === 'dir' ? { ...item, children: sortTree(item.children) } : item);
 }
 
-export async function fetchTree() {
-  const res = await fetch(`${BASE}/repos/${REPO}/git/trees/${BRANCH}?recursive=1`, {
-    headers: ghHeaders(getToken()),
-  });
-  if (!res.ok) {
-    const d = await res.json().catch(() => ({}));
-    throw new Error(d.message || '파일 목록 로드 실패');
+function isLocal() {
+  return location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+}
+
+function flatAdd(path) {
+  if (!flatTree.some(i => i.path === path)) {
+    flatTree.push({ type: 'blob', path, sha: '' });
   }
-  const data = await res.json();
-  return buildTree(data.tree || []);
+}
+
+function flatRemove(path) {
+  flatTree = flatTree.filter(i => i.path !== path);
+}
+
+function flatRename(oldPath, newPath) {
+  const item = flatTree.find(i => i.path === oldPath);
+  if (item) item.path = newPath;
+}
+
+async function saveTreeJson(token) {
+  const json = JSON.stringify(flatTree.filter(i => i.path.endsWith('.md')));
+  await saveFile('tree.json', json, token);
+}
+
+export async function fetchTree() {
+  let items;
+  if (isLocal()) {
+    const res = await fetch('/api/tree');
+    if (!res.ok) throw new Error('파일 목록 로드 실패');
+    const data = await res.json();
+    items = data.tree || [];
+  } else {
+    const res = await fetch(`${RAW_BASE}/tree.json`);
+    if (!res.ok) throw new Error('파일 목록 로드 실패');
+    items = await res.json();
+  }
+  flatTree = items;
+  return buildTree(items);
 }
 
 export async function fetchFile(path) {
-  const res = await fetch(`${BASE}/repos/${REPO}/contents/${encPath(path)}?ref=${BRANCH}`, {
-    headers: ghHeaders(getToken()),
-  });
+  const url = isLocal()
+    ? `/api/file/${encPath(path)}`
+    : `${RAW_BASE}/${encPath(path)}`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error('파일 로드 실패');
-  const data = await res.json();
-  shaCache[path] = data.sha;
-  return b64decode(data.content);
+  return res.text();
 }
 
 async function getSha(path, token) {
@@ -155,6 +182,8 @@ export async function createFile(path, token) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || '파일 생성 실패');
   if (data.content?.sha) shaCache[path] = data.content.sha;
+  flatAdd(path);
+  await saveTreeJson(token);
 }
 
 export async function deleteFile(path, token) {
@@ -168,6 +197,8 @@ export async function deleteFile(path, token) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || '삭제 실패');
   delete shaCache[path];
+  flatRemove(path);
+  await saveTreeJson(token);
 }
 
 export async function renameFile(oldPath, newPath, token) {
@@ -197,6 +228,8 @@ export async function renameFile(oldPath, newPath, token) {
   });
   if (!delRes.ok) throw new Error('이전 파일 삭제 실패');
   delete shaCache[oldPath];
+  flatRename(oldPath, newPath);
+  await saveTreeJson(token);
 }
 
 export async function uploadImage(base64Data, ext, token) {
