@@ -93,17 +93,7 @@ function sortTree(items) {
     .map(item => item.type === 'dir' ? { ...item, children: sortTree(item.children) } : item);
 }
 
-function isLocal() {
-  return location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-}
-
 export async function fetchTree(token) {
-  if (isLocal()) {
-    const res = await fetch('/api/tree');
-    if (!res.ok) throw new Error('파일 목록 로드 실패');
-    const data = await res.json();
-    return buildTree(data.tree || []);
-  }
   const res = await fetch(`${BASE}/repos/${REPO}/git/trees/${BRANCH}?recursive=1`, {
     headers: ghHeaders(token),
   });
@@ -113,11 +103,6 @@ export async function fetchTree(token) {
 }
 
 export async function fetchFile(path, token) {
-  if (isLocal()) {
-    const res = await fetch(`/api/file/${encPath(path)}`);
-    if (!res.ok) throw new Error('파일 로드 실패');
-    return res.text();
-  }
   const res = await fetch(`${BASE}/repos/${REPO}/contents/${encPath(path)}?ref=${BRANCH}`, {
     headers: ghHeaders(token),
   });
