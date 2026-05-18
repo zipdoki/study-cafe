@@ -81,10 +81,10 @@ let fileTreeData = [];
 
 async function refreshTree() {
   try {
-    fileTreeData = await fetchTree();
+    fileTreeData = await withToken(token => fetchTree(token));
     renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
   } catch (e) {
-    console.error('Tree load failed:', e);
+    if (e.message !== 'cancelled') console.error('Tree load failed:', e);
   }
 }
 
@@ -109,7 +109,7 @@ async function openFile(filePath) {
 
   let content;
   try {
-    content = await fetchFile(filePath);
+    content = await withToken(token => fetchFile(filePath, token));
   } catch (e) {
     setStatus('파일 열기 실패', 'error');
     return;

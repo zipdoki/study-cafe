@@ -5,7 +5,6 @@ const BASE = 'https://api.github.com';
 export const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/${BRANCH}`;
 
 const shaCache = {};
-let flatTree = [];
 
 export function getToken() {
   return localStorage.getItem('sc-github-token') || null;
@@ -98,65 +97,33 @@ function isLocal() {
   return location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 }
 
-function flatAdd(path) {
-  if (!flatTree.some(i => i.path === path)) {
-    flatTree.push({ type: 'blob', path, sha: '' });
-  }
-}
-
-function flatRemove(path) {
-  flatTree = flatTree.filter(i => i.path !== path);
-}
-
-function flatRename(oldPath, newPath) {
-  const item = flatTree.find(i => i.path === oldPath);
-  if (item) item.path = newPath;
-}
-
-function collectFlatBlobs(nested) {
-  const blobs = [];
-  for (const item of nested) {
-    if (item.type === 'file') blobs.push({ type: 'blob', path: item.path, sha: shaCache[item.path] || '' });
-    else if (item.type === 'dir') blobs.push(...collectFlatBlobs(item.children || []));
-  }
-  return blobs;
-}
-
-async function saveTreeJson(token) {
-  const nested = buildTree(flatTree.filter(i => i.path.endsWith('.md')));
-  await saveFile('tree.json', JSON.stringify(nested), token);
-}
-
-export async function fetchTree() {
+export async function fetchTree(token) {
   if (isLocal()) {
     const res = await fetch('/api/tree');
     if (!res.ok) throw new Error('파일 목록 로드 실패');
     const data = await res.json();
-    flatTree = data.tree || [];
-    return buildTree(flatTree);
+    return buildTree(data.tree || []);
   }
-
-  const res = await fetch(`${RAW_BASE}/tree.json`, { cache: 'no-cache' });
+  const res = await fetch(`${BASE}/repos/${REPO}/git/trees/${BRANCH}?recursive=1`, {
+    headers: ghHeaders(token),
+  });
   if (!res.ok) throw new Error('파일 목록 로드 실패');
   const data = await res.json();
-
-  if (!data.length || data[0]?.type === 'blob') {
-    flatTree = data;
-    return buildTree(data);
-  }
-
-  // nested 포맷 (saveTreeJson이 저장한 형태)
-  flatTree = collectFlatBlobs(data);
-  return data;
+  return buildTree(data.tree || []);
 }
 
-export async function fetchFile(path) {
-  const url = isLocal()
-    ? `/api/file/${encPath(path)}`
-    : `${RAW_BASE}/${encPath(path)}`;
-  const res = await fetch(url);
+export async function fetchFile(path, token) {
+  if (isLocal()) {
+    const res = await fetch(`/api/file/${encPath(path)}`);
+    if (!res.ok) throw new Error('파일 로드 실패');
+    return res.text();
+  }
+  const res = await fetch(`${BASE}/repos/${REPO}/contents/${encPath(path)}?ref=${BRANCH}`, {
+    headers: ghHeaders(token),
+  });
   if (!res.ok) throw new Error('파일 로드 실패');
-  return res.text();
+  const data = await res.json();
+  return b64decode(data.content);
 }
 
 async function getSha(path, token) {
@@ -198,8 +165,6 @@ export async function createFile(path, token) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || '파일 생성 실패');
   if (data.content?.sha) shaCache[path] = data.content.sha;
-  flatAdd(path);
-  await saveTreeJson(token);
 }
 
 export async function deleteFile(path, token) {
@@ -213,8 +178,6 @@ export async function deleteFile(path, token) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || '삭제 실패');
   delete shaCache[path];
-  flatRemove(path);
-  await saveTreeJson(token);
 }
 
 export async function renameFile(oldPath, newPath, token) {
@@ -244,8 +207,6 @@ export async function renameFile(oldPath, newPath, token) {
   });
   if (!delRes.ok) throw new Error('이전 파일 삭제 실패');
   delete shaCache[oldPath];
-  flatRename(oldPath, newPath);
-  await saveTreeJson(token);
 }
 
 export async function uploadImage(base64Data, ext, token) {
