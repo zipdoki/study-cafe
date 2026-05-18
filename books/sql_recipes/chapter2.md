@@ -3,3 +3,5 @@
 ## 3강 시스템
 
 ### 1\. PostgreSQL
+
+### 2\. Apache Hive
