@@ -287,7 +287,7 @@
       setupResizer();
 
       try {
-        const res = await fetch('manifest.json');
+        const res = await fetch('tree.json');
         if (!res.ok) throw new Error();
         const tree = await res.json();
         renderTree(tree, document.getElementById('file-tree'));

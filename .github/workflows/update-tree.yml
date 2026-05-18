@@ -1,0 +1,56 @@
+name: Update tree.json
+
+on:
+  push:
+    branches: [pages]
+    paths-ignore:
+      - 'tree.json'
+
+jobs:
+  update-tree:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate tree.json
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+
+          const SKIP = new Set(['.github', 'images']);
+
+          function collect(dir, root) {
+            const results = [];
+            const entries = fs.readdirSync(dir, { withFileTypes: true })
+              .filter(e => !e.name.startsWith('.') && !SKIP.has(e.name));
+            for (const entry of entries) {
+              const abs = path.join(dir, entry.name);
+              const rel = path.relative(root, abs);
+              if (entry.isDirectory()) {
+                const children = collect(abs, root);
+                if (children.length > 0)
+                  results.push({ type: 'dir', name: entry.name, path: rel, children });
+              } else if (entry.isFile() && entry.name.endsWith('.md')) {
+                results.push({ type: 'file', name: entry.name, path: rel });
+              }
+            }
+            return results;
+          }
+
+          const tree = collect('.', '.');
+          fs.writeFileSync('tree.json', JSON.stringify(tree, null, 2));
+          console.log('tree.json updated');
+          "
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tree.json
+          if git diff --staged --quiet; then
+            echo "tree.json unchanged, skipping commit"
+          else
+            git commit -m "chore: update tree.json [skip ci]"
+            git push
+          fi
