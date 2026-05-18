@@ -229,8 +229,8 @@ html, body {
   color: var(--text-primary);
 }
 
-.ProseMirror h1 { font-size: 2em; font-weight: 700; line-height: 1.2; margin-top: 1.4em; margin-bottom: 0.2em; }
-.ProseMirror h2 { font-size: 1.7em; font-weight: 600; line-height: 1.25; margin-top: 1.2em; margin-bottom: 0.15em; }
+.ProseMirror h1 { font-size: 2em; font-weight: 700; line-height: 1.2; margin-top: 1.4em; margin-bottom: 0.8em; }
+.ProseMirror h2 { font-size: 1.7em; font-weight: 600; line-height: 1.25; margin-top: 1.2em; margin-bottom: 0.8em; }
 .ProseMirror h3 { font-size: 1.25em; font-weight: 600; margin-top: 1em; margin-bottom: 0.8em; }
 .ProseMirror h4, .ProseMirror h5, .ProseMirror h6 { font-size: 1em; font-weight: 600; margin-top: 0.8em; }
 
