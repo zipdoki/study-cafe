@@ -22,3 +22,7 @@ AWS에서 제공하는 분산 병렬 RDB(OLAP)
 ### 4\. Google BigQuery
 
 컬럼 지향 스토리지
+
+### 5\. SparkSQL
+
+## 4강 데이터
