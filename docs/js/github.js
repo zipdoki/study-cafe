@@ -113,25 +113,41 @@ function flatRename(oldPath, newPath) {
   if (item) item.path = newPath;
 }
 
+function collectFlatBlobs(nested) {
+  const blobs = [];
+  for (const item of nested) {
+    if (item.type === 'file') blobs.push({ type: 'blob', path: item.path, sha: shaCache[item.path] || '' });
+    else if (item.type === 'dir') blobs.push(...collectFlatBlobs(item.children || []));
+  }
+  return blobs;
+}
+
 async function saveTreeJson(token) {
-  const json = JSON.stringify(flatTree.filter(i => i.path.endsWith('.md')));
-  await saveFile('tree.json', json, token);
+  const nested = buildTree(flatTree.filter(i => i.path.endsWith('.md')));
+  await saveFile('tree.json', JSON.stringify(nested), token);
 }
 
 export async function fetchTree() {
-  let items;
   if (isLocal()) {
     const res = await fetch('/api/tree');
     if (!res.ok) throw new Error('파일 목록 로드 실패');
     const data = await res.json();
-    items = data.tree || [];
-  } else {
-    const res = await fetch(`${RAW_BASE}/tree.json`);
-    if (!res.ok) throw new Error('파일 목록 로드 실패');
-    items = await res.json();
+    flatTree = data.tree || [];
+    return buildTree(flatTree);
   }
-  flatTree = items;
-  return buildTree(items);
+
+  const res = await fetch(`${RAW_BASE}/tree.json`, { cache: 'no-cache' });
+  if (!res.ok) throw new Error('파일 목록 로드 실패');
+  const data = await res.json();
+
+  if (!data.length || data[0]?.type === 'blob') {
+    flatTree = data;
+    return buildTree(data);
+  }
+
+  // nested 포맷 (saveTreeJson이 저장한 형태)
+  flatTree = collectFlatBlobs(data);
+  return data;
 }
 
 export async function fetchFile(path) {
