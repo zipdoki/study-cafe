@@ -100,7 +100,12 @@ function collectFilePaths(items) {
 // ── Open file ──────────────────────────────────────────────
 
 async function openFile(filePath) {
-  if (state.isDirty && state.currentFile) await saveFile();
+  if (state.isDirty && state.currentFile) {
+    const fileToSave = state.currentFile;
+    const contentToSave = getMarkdown();
+    state.isDirty = false;
+    saveFileInBackground(fileToSave, contentToSave);
+  }
 
   let content;
   try {
@@ -156,6 +161,18 @@ async function saveFile() {
   }
 
   btnSave.disabled = false;
+}
+
+async function saveFileInBackground(filePath, content) {
+  try {
+    await withToken((token) => ghSave(filePath, content, token));
+    if (state.currentFile === filePath) setStatus(`저장됨 ${hhmm()}`);
+  } catch (e) {
+    if (e.message !== 'cancelled' && state.currentFile === filePath) {
+      setStatus(`저장 실패: ${e.message}`, 'error');
+      console.error(e);
+    }
+  }
 }
 
 // ── Create file ────────────────────────────────────────────
