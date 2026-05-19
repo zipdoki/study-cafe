@@ -63,9 +63,16 @@ function buildLangDropdown(btn, currentLang, onSelect) {
 
   function openDropdown() {
     const rect = btn.getBoundingClientRect();
-    dropdown.style.top  = (rect.bottom + 4) + 'px';
+    dropdown.style.top  = '-9999px';
     dropdown.style.left = rect.left + 'px';
     dropdown.style.display = 'block';
+    const dropH = dropdown.offsetHeight;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceBelow < dropH + 8) {
+      dropdown.style.top = (rect.top - dropH - 4) + 'px';
+    } else {
+      dropdown.style.top = (rect.bottom + 4) + 'px';
+    }
   }
 
   function closeDropdown() {
@@ -116,6 +123,22 @@ const CodeBlockWithLang = CodeBlockLowlight.extend({
       btn.textContent = getLangLabel(node.attrs.language || '') + ' ▾';
       btn.type = 'button';
       toolbar.appendChild(btn);
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'code-delete-btn';
+      deleteBtn.textContent = '×';
+      deleteBtn.type = 'button';
+      deleteBtn.title = '코드 블록 삭제';
+      deleteBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        if (typeof getPos !== 'function') return;
+        const pos = getPos();
+        editor.chain().focus().command(({ tr }) => {
+          tr.delete(pos, pos + currentNode.nodeSize);
+          return true;
+        }).run();
+      });
+      toolbar.appendChild(deleteBtn);
 
       const { destroy, updateSelection } = buildLangDropdown(btn, node.attrs.language || '', (lang) => {
         if (typeof getPos !== 'function') return;
@@ -616,6 +639,11 @@ export function initEditor(onUpdate, onSelectionUpdate, onImageUpload, onSave) {
       handleKeyDown(view, event) {
         if (event.key === 'Tab' && !event.metaKey && !event.ctrlKey) {
           const { $from } = view.state.selection;
+          if ($from.parent.type.name === 'codeBlock') {
+            event.preventDefault();
+            view.dispatch(view.state.tr.insertText('  '));
+            return true;
+          }
           if ($from.node(-1)?.type.name === 'listItem') {
             event.preventDefault();
             if (event.shiftKey) {
@@ -738,7 +766,10 @@ export function setContent(markdownContent) {
       /```mermaid\n([\s\S]*?)```/g,
       (_, code) => `<div data-type="mermaid" data-code="${encodeURIComponent(code.trim())}"></div>`,
     );
-  const html = window.marked ? window.marked.parse(processed) : processed;
+  const raw = window.marked ? window.marked.parse(processed) : processed;
+  const html = raw.replace(/<code([^>]*)>([\s\S]*?)<\/code>/g, (_, attrs, content) =>
+    `<code${attrs}>${content.replace(/\n$/, '')}</code>`
+  );
   editor.commands.setContent(html, false);
 }
 

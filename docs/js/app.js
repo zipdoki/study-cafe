@@ -1,5 +1,5 @@
 import { initEditor, setContent, getMarkdown, focusEditor } from './editor.js';
-import { renderFileTree, showInlineCreate } from './fileTree.js';
+import { renderFileTree, showInlineCreate, showInlineFolderCreate } from './fileTree.js';
 import { ICON } from './icons.js';
 import { showConfirm, showAlert, showTokenInput } from './modal.js';
 import {
@@ -9,6 +9,8 @@ import {
   createFile as ghCreate,
   deleteFile as ghDelete,
   renameFile as ghRename,
+  createDir as ghCreateDir,
+  getKnownPaths,
   uploadImage as ghUpload,
   RAW_BASE,
 } from './github.js';
@@ -24,8 +26,11 @@ const statusText      = $('status-text');
 const btnSave         = $('btn-save');
 const btnNew          = $('btn-new-file');
 btnNew.innerHTML      = ICON.plus;
+const btnNewFolder    = $('btn-new-folder');
+btnNewFolder.innerHTML = ICON.folderPlus;
 const btnToken        = $('btn-token');
 const editorContainer = $('editor-container');
+const skeletonLoader  = $('skeleton-loader');
 const dirView         = $('dir-view');
 const dirFilesGrid    = $('dir-files-grid');
 
@@ -79,11 +84,27 @@ async function withToken(fn) {
 
 let fileTreeData = [];
 
+function showTreeSkeleton() {
+  const widths = ['65%', '80%', '50%', '72%', '58%', '85%', '45%'];
+  fileTreeEl.innerHTML = widths.map(w =>
+    `<div class="sk-tree-item">
+      <div class="sk-tree-icon"></div>
+      <div class="sk-tree-text" style="width:${w}"></div>
+    </div>`
+  ).join('');
+}
+
 async function refreshTree() {
+  showTreeSkeleton();
   try {
     fileTreeData = await withToken(token => fetchTree(token));
-    renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
+    renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveItem, deleteFile, doCreateFile, renameItem, state.activeDir);
+    if (state.activeDir !== null && dirView.style.display !== 'none') {
+      const items = state.activeDir === '' ? fileTreeData : findDirItems(fileTreeData, state.activeDir);
+      renderDirGrid(items || []);
+    }
   } catch (e) {
+    fileTreeEl.innerHTML = '';
     if (e.message !== 'cancelled') console.error('Tree load failed:', e);
   }
 }
@@ -107,14 +128,20 @@ async function openFile(filePath) {
     saveFileInBackground(fileToSave, contentToSave);
   }
 
+  editorContainer.style.display = 'none';
+  dirView.style.display = 'none';
+  skeletonLoader.style.display = '';
+
   let content;
   try {
     content = await withToken(token => fetchFile(filePath, token));
   } catch (e) {
+    skeletonLoader.style.display = 'none';
     setStatus('파일 열기 실패', 'error');
     return;
   }
 
+  skeletonLoader.style.display = 'none';
   state.currentFile = filePath;
   state.activeDir = null;
   state.isDirty = false;
@@ -134,11 +161,20 @@ async function openFile(filePath) {
   history.pushState(null, '', BASE + filePath);
 
   if (window.innerWidth <= 640) setSidebarCollapsed(true);
-  renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
+  renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveItem, deleteFile, doCreateFile, renameItem, state.activeDir);
   focusEditor();
 }
 
 // ── Save file ──────────────────────────────────────────────
+
+// 저장을 직렬화하여 동시 저장으로 인한 SHA 충돌 방지
+let saveQueue = Promise.resolve();
+
+function chainSave(saveFn) {
+  const next = saveQueue.then(saveFn, saveFn); // 이전 실패 여부 관계없이 실행
+  saveQueue = next.catch(() => {});            // 체인이 끊기지 않도록
+  return next;
+}
 
 async function saveFile() {
   if (!state.currentFile) return;
@@ -146,9 +182,11 @@ async function saveFile() {
   setStatus('저장 중…');
   btnSave.disabled = true;
 
+  const filePath = state.currentFile;
+  const content = getMarkdown();
+
   try {
-    const content = getMarkdown();
-    await withToken((token) => ghSave(state.currentFile, content, token));
+    await chainSave(() => withToken((token) => ghSave(filePath, content, token)));
     state.isDirty = false;
     setStatus(`저장됨 ${hhmm()}`);
   } catch (e) {
@@ -165,7 +203,7 @@ async function saveFile() {
 
 async function saveFileInBackground(filePath, content) {
   try {
-    await withToken((token) => ghSave(filePath, content, token));
+    await chainSave(() => withToken((token) => ghSave(filePath, content, token)));
     if (state.currentFile === filePath) setStatus(`저장됨 ${hhmm()}`);
   } catch (e) {
     if (e.message !== 'cancelled' && state.currentFile === filePath) {
@@ -185,6 +223,18 @@ async function doCreateFile(raw) {
     await openFile(filePath);
   } catch (e) {
     if (e.message !== 'cancelled') setStatus(`파일 생성 실패: ${e.message}`, 'error');
+  }
+}
+
+// ── Create dir ─────────────────────────────────────────────
+
+async function doCreateDir(name) {
+  try {
+    await withToken((token) => ghCreateDir(name, token));
+    setStatus('폴더 생성됨');
+    await refreshTree();
+  } catch (e) {
+    if (e.message !== 'cancelled') setStatus(`폴더 생성 실패: ${e.message}`, 'error');
   }
 }
 
@@ -223,15 +273,18 @@ async function renameItem(oldPath, newName, type) {
 
   try {
     if (type === 'dir') {
-      const toMove = collectFilePaths(fileTreeData).filter(p => p.startsWith(oldPath + '/'));
+      const allPaths = getKnownPaths(oldPath);
       await withToken(async (token) => {
-        for (const fp of toMove) {
-          await ghRename(fp, fp.replace(oldPath + '/', newPath + '/'), token);
+        for (const fp of allPaths) {
+          await ghRename(fp, newPath + fp.slice(oldPath.length), token);
         }
       });
       if (state.currentFile?.startsWith(oldPath + '/')) {
-        state.currentFile = state.currentFile.replace(oldPath + '/', newPath + '/');
+        state.currentFile = newPath + state.currentFile.slice(oldPath.length);
         pathDisplay.textContent = state.currentFile;
+      }
+      if (state.activeDir === oldPath || state.activeDir?.startsWith(oldPath + '/')) {
+        state.activeDir = newPath + (state.activeDir.slice(oldPath.length) || '');
       }
     } else {
       await withToken((token) => ghRename(oldPath, newPath, token));
@@ -252,12 +305,32 @@ async function renameItem(oldPath, newName, type) {
 
 // ── Move (drag & drop) ─────────────────────────────────────
 
-async function moveFile(oldPath, newPath) {
+async function moveItem(oldPath, newPath, type = 'file') {
+  setStatus('이동 중…');
+  const srcEl = fileTreeEl.querySelector(`[data-path="${oldPath}"], [data-dir-path="${oldPath}"]`);
+  if (srcEl) srcEl.classList.add('moving');
   try {
-    await withToken((token) => ghRename(oldPath, newPath, token));
-    if (state.currentFile === oldPath) {
-      state.currentFile = newPath;
-      pathDisplay.textContent = state.currentFile;
+    if (type === 'dir') {
+      const allPaths = getKnownPaths(oldPath);
+      await withToken(async (token) => {
+        for (const fp of allPaths) {
+          const destFp = newPath + fp.slice(oldPath.length);
+          await ghRename(fp, destFp, token);
+        }
+      });
+      if (state.currentFile?.startsWith(oldPath + '/')) {
+        state.currentFile = newPath + state.currentFile.slice(oldPath.length);
+        pathDisplay.textContent = state.currentFile;
+      }
+      if (state.activeDir === oldPath || state.activeDir?.startsWith(oldPath + '/')) {
+        state.activeDir = newPath + (state.activeDir.slice(oldPath.length) || '');
+      }
+    } else {
+      await withToken((token) => ghRename(oldPath, newPath, token));
+      if (state.currentFile === oldPath) {
+        state.currentFile = newPath;
+        pathDisplay.textContent = state.currentFile;
+      }
     }
     setStatus('이동됨');
     await refreshTree();
@@ -326,7 +399,7 @@ function openDir(dirPath) {
   showDirView(dirPath, items || []);
   history.pushState(null, '', BASE + dirPath);
   if (window.innerWidth <= 640) setSidebarCollapsed(true);
-  renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
+  renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveItem, deleteFile, doCreateFile, renameItem, state.activeDir);
 }
 
 function openRootDir() {
@@ -334,7 +407,7 @@ function openRootDir() {
   showDirView('', fileTreeData);
   history.pushState(null, '', BASE);
   if (window.innerWidth <= 640) setSidebarCollapsed(true);
-  renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
+  renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveItem, deleteFile, doCreateFile, renameItem, state.activeDir);
 }
 
 function handleDirTap(e) {
@@ -483,6 +556,7 @@ function buildThemePicker(anchorEl) {
 document.querySelector('.app-identity').addEventListener('click', openRootDir);
 btnSave.addEventListener('click', saveFile);
 btnNew.addEventListener('click', () => showInlineCreate(fileTreeEl, doCreateFile));
+btnNewFolder.addEventListener('click', () => showInlineFolderCreate(fileTreeEl, doCreateDir));
 $('btn-theme').addEventListener('click', (e) => buildThemePicker(e.currentTarget));
 btnToken.addEventListener('click', async () => {
   const token = await showTokenInput();
@@ -625,7 +699,7 @@ async function handlePageResume() {
   if (window.innerWidth <= 640) setSidebarCollapsed(true);
   await refreshTree();
   if (!state.currentFile && !state.activeDir) openRootDir();
-  else if (state.currentFile) renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveFile, deleteFile, doCreateFile, renameItem, state.activeDir);
+  else if (state.currentFile) renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveItem, deleteFile, doCreateFile, renameItem, state.activeDir);
 }
 
 document.addEventListener('visibilitychange', () => {

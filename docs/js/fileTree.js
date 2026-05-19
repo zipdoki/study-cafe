@@ -2,6 +2,13 @@ import { ICON } from './icons.js';
 
 let dragSrc = null;
 
+const BASE_INDENT = 14;
+const INDENT_STEP = 14;
+
+function itemPadding(depth) {
+  return `${BASE_INDENT + depth * INDENT_STEP}px`;
+}
+
 export function renderFileTree(items, container, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath) {
   container.innerHTML = '';
   setupDropTarget(container, '', onMove, 'drag-over-root');
@@ -14,10 +21,10 @@ export function renderFileTree(items, container, onFileClick, activeFile, onMove
     return;
   }
 
-  renderItems(items, container, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath);
+  renderItems(items, container, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath, 0);
 }
 
-function renderItems(items, container, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath) {
+function renderItems(items, container, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath, depth) {
   for (const item of items) {
     if (item.type === 'dir') {
       const block = document.createElement('div');
@@ -25,13 +32,29 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
 
       const children = document.createElement('div');
       children.className = 'tree-children';
-      renderItems(item.children, children, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath);
+      renderItems(item.children, children, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath, depth + 1);
 
       const header = document.createElement('div');
       header.className = `tree-item dir${item.path === activeDirPath ? ' active' : ''}`;
       header.dataset.dirPath = item.path;
+      header.draggable = !('ontouchstart' in window);
+      header.style.paddingLeft = itemPadding(depth);
       header.innerHTML = `${ICON.chevronDown}${ICON.folder}<span class="tree-label">${esc(item.name)}</span><button class="tree-add-btn" title="이 폴더에 파일 추가">+</button>`;
       setupDropTarget(header, item.path, onMove);
+
+      header.addEventListener('dragstart', (e) => {
+        dragSrc = item.path;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', item.path);
+        requestAnimationFrame(() => header.classList.add('dragging'));
+      });
+
+      header.addEventListener('dragend', () => {
+        dragSrc = null;
+        header.classList.remove('dragging');
+        document.querySelectorAll('.drag-over, .drag-over-root')
+          .forEach(n => n.classList.remove('drag-over', 'drag-over-root'));
+      });
 
       let collapsed = false;
 
@@ -42,14 +65,11 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
         if (chevron) chevron.outerHTML = collapsed ? ICON.chevronRight : ICON.chevronDown;
       }
 
-      // Only the chevron toggles collapse; label/row click is handled by app.js
       header.addEventListener('click', (e) => {
         if (e.target.closest('.tree-chevron')) { toggleCollapse(); return; }
         if (e.target.closest('.tree-add-btn')) return;
-        // Other clicks fall through to app.js fileTreeEl listener (dir view)
       });
 
-      // Double-click label → rename
       header.querySelector('.tree-label').addEventListener('dblclick', (e) => {
         e.stopPropagation();
         startRename(e.target, item.name, (newName) => onRename(item.path, newName, 'dir'));
@@ -65,7 +85,7 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
         showInlineCreate(children, (name) => {
           const rel = name.endsWith('.md') ? name : name + '.md';
           onCreate(`${item.path}/${rel}`);
-        });
+        }, depth + 1);
       });
 
       block.appendChild(header);
@@ -76,6 +96,7 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
       el.className = `tree-item file${item.path === activeFile ? ' active' : ''}`;
       el.dataset.path = item.path;
       el.draggable = !('ontouchstart' in window);
+      el.style.paddingLeft = itemPadding(depth);
       el.innerHTML = `${ICON.file}<span class="tree-label">${esc(item.name)}</span><button class="tree-delete-btn" title="삭제">×</button>`;
 
       let clickTimer = null;
@@ -91,7 +112,6 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
         onFileClick(item.path);
       }, { passive: false });
 
-      // Double-click label → rename
       el.querySelector('.tree-label').addEventListener('dblclick', (e) => {
         e.stopPropagation();
         clearTimeout(clickTimer);
@@ -123,9 +143,8 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
   }
 }
 
-// Inline rename: replaces label with input in-place
 function startRename(labelEl, currentName, onConfirm) {
-  if (labelEl.querySelector('input')) return; // already renaming
+  if (labelEl.querySelector('input')) return;
 
   const input = document.createElement('input');
   input.className = 'tree-rename-input';
@@ -182,18 +201,21 @@ function setupDropTarget(el, targetDir, onMove, overClass = 'drag-over') {
     el.classList.remove(overClass);
     const src = e.dataTransfer.getData('text/plain') || dragSrc;
     if (!src) return;
+    const srcType = src.endsWith('.md') ? 'file' : 'dir';
     const basename = src.split('/').pop();
     const dest = targetDir ? `${targetDir}/${basename}` : basename;
-    if (dest !== src) onMove(src, dest);
+    if (dest === src || dest.startsWith(src + '/')) return;
+    onMove(src, dest, srcType);
   });
 }
 
-export function showInlineCreate(container, onConfirm) {
+export function showInlineCreate(container, onConfirm, depth = 0) {
   const existing = container.querySelector('.tree-inline-wrapper');
   if (existing) { existing.remove(); return; }
 
   const wrapper = document.createElement('div');
   wrapper.className = 'tree-inline-wrapper';
+  wrapper.style.paddingLeft = itemPadding(depth);
   wrapper.innerHTML = ICON.file;
 
   const input = document.createElement('input');
@@ -208,6 +230,42 @@ export function showInlineCreate(container, onConfirm) {
 
   function confirm() {
     const val = input.value.trim();
+    wrapper.remove();
+    if (val) onConfirm(val);
+  }
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') confirm();
+    if (e.key === 'Escape') wrapper.remove();
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => { if (wrapper.isConnected) wrapper.remove(); }, 200);
+  });
+}
+
+export function showInlineFolderCreate(container, onConfirm) {
+  const existing = container.querySelector('.tree-inline-wrapper');
+  if (existing) { existing.remove(); return; }
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'tree-inline-wrapper';
+  wrapper.style.paddingLeft = itemPadding(0);
+  wrapper.innerHTML = ICON.folder;
+
+  const input = document.createElement('input');
+  input.className = 'tree-inline-input';
+  input.type = 'text';
+  input.placeholder = '폴더 이름';
+  input.spellcheck = false;
+  input.autocomplete = 'off';
+
+  wrapper.appendChild(input);
+  container.insertBefore(wrapper, container.firstChild);
+  input.focus();
+
+  function confirm() {
+    const val = input.value.trim().replace(/\/+$/, '');
     wrapper.remove();
     if (val) onConfirm(val);
   }

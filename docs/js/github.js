@@ -51,8 +51,10 @@ function buildTree(items) {
   const neededDirs = new Set();
 
   for (const item of items) {
-    if (item.type === 'blob' && item.path.endsWith('.md')) {
+    if (item.type === 'blob') {
       if (item.sha) shaCache[item.path] = item.sha;
+      const topLevel = item.path.split('/')[0];
+      if (topLevel === 'images') continue;
       const parts = item.path.split('/');
       for (let i = 1; i < parts.length; i++) {
         neededDirs.add(parts.slice(0, i).join('/'));
@@ -199,6 +201,22 @@ export async function renameFile(oldPath, newPath, token) {
   });
   if (!delRes.ok) throw new Error('이전 파일 삭제 실패');
   delete shaCache[oldPath];
+}
+
+export async function createDir(dirPath, token) {
+  const path = `${dirPath}/.gitkeep`;
+  const res = await fetch(`${BASE}/repos/${REPO}/contents/${encPath(path)}`, {
+    method: 'PUT',
+    headers: { ...ghHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: `Create directory ${dirPath}`, content: b64encode(''), branch: BRANCH }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || '폴더 생성 실패');
+  if (data.content?.sha) shaCache[path] = data.content.sha;
+}
+
+export function getKnownPaths(prefix) {
+  return Object.keys(shaCache).filter(p => p === prefix || p.startsWith(prefix + '/'));
 }
 
 export async function uploadImage(base64Data, ext, token) {

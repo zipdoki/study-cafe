@@ -19,8 +19,8 @@ export const ICON = {
     <path d="M5 3L9 7L5 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`,
 
-  folder: `<svg class="tree-icon-svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M1.5 4.5C1.5 3.948 1.948 3.5 2.5 3.5H6.086L7.293 4.707A1 1 0 008 5H13.5C14.052 5 14.5 5.448 14.5 6V12C14.5 12.552 14.052 13 13.5 13H2.5C1.948 13 1.5 12.552 1.5 12V4.5Z" fill="#4A90E2"/>
+  folder: `<svg class="tree-icon-svg" width="16" height="14" viewBox="0 0 16 14" fill="none">
+    <path d="M1.5 4C1.5 3.172 2.172 2.5 3 2.5H6.5L8 4H13C13.828 4 14.5 4.672 14.5 5.5V11C14.5 11.828 13.828 12.5 13 12.5H3C2.172 12.5 1.5 11.828 1.5 11V4Z" fill="#4A90E2"/>
   </svg>`,
 
   file: `<svg class="tree-icon-svg" width="14" height="16" viewBox="0 0 14 16" fill="none">
@@ -36,5 +36,10 @@ export const ICON = {
     <path d="M4 2H20L28 10V34H4V2Z" fill="#ffffff" stroke="#ccc" stroke-width="1.5"/>
     <path d="M20 2V10H28" stroke="#ccc" stroke-width="1.5" fill="none"/>
     <path d="M9 18H23M9 22H18" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+  </svg>`,
+
+  folderPlus: `<svg width="16" height="14" viewBox="0 0 16 14" fill="none">
+    <path d="M1.5 4C1.5 3.172 2.172 2.5 3 2.5H6.5L8 4H13C13.828 4 14.5 4.672 14.5 5.5V11C14.5 11.828 13.828 12.5 13 12.5H3C2.172 12.5 1.5 11.828 1.5 11V4Z" fill="#4A90E2"/>
+    <path d="M8 7V10M6.5 8.5H9.5" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
   </svg>`,
 };
