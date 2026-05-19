@@ -24,3 +24,12 @@ u001    | 2016-08-26    | 1
 u002    | 2016-08-26    | 2
 u003    | 2016-08-27    | 3
 ```
+
+```
+SELECT
+user_id
+, CASE
+WHEN register_device = 1 THEN '데스크톱'
+WHEN register_device = 2 THEN '스마트폰'
+WHEN 
+```
