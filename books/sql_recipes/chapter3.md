@@ -34,4 +34,5 @@ SELECT
       WHEN register_device = 3 THEN '애플리케이션'
     END AS device_name
 FROM mst_users
+;
 ```
