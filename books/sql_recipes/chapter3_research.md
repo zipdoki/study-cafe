@@ -260,6 +260,18 @@ WHERE year IN (SELECT year FROM other_table)
 
 Spark Catalyst Optimizer가 위의 쿼리를 내부적으로 이렇게 변환한다. IN (서브쿼리)를 그대로 처리하지 않고 Join 연산으로 재작성하는 이유는 Join이 분산 처리에 더 최적화되어 있기 때문이다.
 
+<!-- empty-paragraph -->
+
+IN 서브쿼리를 그대로 처리하면 매 행마다 서브쿼리를 반복 실행한다. 그러나 Join으로 변환하면 서브쿼리를 한 번만 실행하고 결과를 재사용한다.
+
+1\. other\_table 한 번 스캔 → {2021, 2023} 해시맵 생성
+
+2\. quarterly\_sales 스캔하면서 해시맵에 있는지 확인
+
+quarterly\_sales가 1억 건이어도 other\_table은 한 번만 읽는다.
+
+<!-- empty-paragraph -->
+
 ```sql
 SELECT quarterly_sales.*
 FROM quarterly_sales
@@ -303,7 +315,7 @@ year=2021 매칭을 하려면 quarterly\_sales의 Partition 0과 other\_table의
 | 2021 | 200 | 180 | 220 | 210 |
 | 2023 | 400 | 350 | 380 | 360 |
 
-<!-- empty-paragraph -->
+ㅇ
 
 \[Broadcast Join으로 셔플 생략\]
 
