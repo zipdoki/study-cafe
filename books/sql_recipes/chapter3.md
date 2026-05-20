@@ -291,8 +291,6 @@ Catalyst 옵티마이저가 Logical Plan을 Physical Plan으로 변환하면서 
 
 * * *
 
-<p></p>
-
 ### 2\. URL에서 요소 추출하기
 
 #### 레퍼러로 어떤 웹 페이지를 거쳐 넘어왔는지 판별하기
@@ -309,11 +307,52 @@ FROM access_log
 
 <p></p>
 
-<p></p>
+```scala
+package study.spark
+
+object Test extends SparkTestBase {
+  import spark.implicits._
+
+  def main(args: Array[String]): Unit = {
+    Seq(
+      ("2024-01-01 00:00:00", "https://www.google.com/search?q=spark"),
+      ("2024-01-01 00:01:00", "https://github.com/apache/spark"),
+      ("2024-01-01 00:02:00", "http://stackoverflow.com/questions/12345"),
+      ("2024-01-01 00:03:00", null)
+    ).toDF("stamp", "referrer").createOrReplaceTempView("access_log")
+
+    spark.sql(
+      """SELECT stamp
+     , substring(referrer from 'https?://([^/]*') AS referrer_host
+     , regexp_replace(regexp_substr(referrer, 'https?://[^/]*'), 'https?://', '') AS referrer_host2
+     , parse_url(referrer, 'HOST') AS referrer_host3
+      FROM access_log"""
+    ).show(truncate = false)
+  }
+}
+```
 
 <p></p>
 
-<p></p>
+```
+== Parsed Logical Plan ==
+'Project ['stamp, 'regexp_extract('referrer, https?://([^/]*), 1) AS referrer_host#11, 'regexp_replace('regexp_substr('referrer, https?://[^/]*), https?://, ) AS referrer_host2#12, 'parse_url('referrer, HOST) AS referrer_host3#13]
++- 'UnresolvedRelation [access_log], [], false
+
+== Analyzed Logical Plan ==
+stamp: string, referrer_host: string, referrer_host2: string, referrer_host3: string
+Project [stamp#9, regexp_extract(referrer#10, https?://([^/]*), 1) AS referrer_host#11, regexp_replace(regexp_substr(referrer#10, https?://[^/]*), https?://, , 1) AS referrer_host2#12, parse_url(referrer#10, HOST, true) AS referrer_host3#13]
++- SubqueryAlias access_log
+   +- View (`access_log`, [stamp#9, referrer#10])
+      +- Project [_1#2 AS stamp#9, _2#3 AS referrer#10]
+         +- LocalRelation [_1#2, _2#3]
+
+== Optimized Logical Plan ==
+LocalRelation [stamp#9, referrer_host#11, referrer_host2#12, referrer_host3#13]
+
+== Physical Plan ==
+LocalTableScan [stamp#9, referrer_host#11, referrer_host2#12, referrer_host3#13]
+```
 
 <p></p>
 
