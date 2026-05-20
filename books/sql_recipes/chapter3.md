@@ -273,7 +273,7 @@ Catalyst 옵티마이저가 Logical Plan을 Physical Plan으로 변환하면서 
 | Filter | 조건 필터 |
 | Window | 윈도우 함수 실행 |
 | Generate | explode() 등 행 생성 |
-| WholeStageCodegen | 여러 연산을 하나의 JVM 코드로 묶어 실행 (성능 최적화)\ |
+| WholeStageCodegen | 여러 연산을 하나의 JVM 코드로 묶어 실행 (성능 최적화) |
 
 <p></p>
 
