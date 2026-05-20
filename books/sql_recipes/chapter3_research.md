@@ -315,7 +315,7 @@ year=2021 매칭을 하려면 quarterly\_sales의 Partition 0과 other\_table의
 | 2021 | 200 | 180 | 220 | 210 |
 | 2023 | 400 | 350 | 380 | 360 |
 
-ㅇ
+<!-- empty-paragraph -->
 
 \[Broadcast Join으로 셔플 생략\]
 
