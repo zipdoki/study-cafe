@@ -2,7 +2,7 @@
 
 ## Spark Logical Plan 노드 종류
 
-Spark Logical Plan의 노드들은 크게 **Relation(데이터 소스)**, **Structural(구조)**, **Operator(변환)** 으로 나뉜다.
+Spark Logical Plan의 노드들은 크게 Relation(데이터 소스), Structural(구조), Operator(변환) 으로 나뉜다.
 
 <!-- empty-paragraph -->
 
@@ -15,6 +15,13 @@ Spark Logical Plan의 노드들은 크게 **Relation(데이터 소스)**, **Stru
 | HiveTableRelation | Hive 메타스토어의 테이블 |
 | LogicalRelation | Parquet, CSV, JDBC 등 외부 데이터소스 |
 | InMemoryRelation | .cache() / .persist()로 캐싱된 데이터 |
+
+<!-- empty-paragraph -->
+
+-   LocalRelation: 드라이버가 데이터를 들고 있는 상태
+    
+-   InMemoryRelation: Executor가 데이터를 들고 있는 상태 (분산 캐시)
+    
 
 <!-- empty-paragraph -->
 
@@ -160,5 +167,3 @@ Catalyst 옵티마이저가 Logical Plan을 Physical Plan으로 변환하면서 
 | Shuffle | 없음 | Exchange |
 
 <!-- empty-paragraph -->
-
-* * *
