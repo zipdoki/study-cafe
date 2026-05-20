@@ -402,3 +402,65 @@ object Test extends SparkTestBase {
 ```
 
 <!-- empty-paragraph -->
+
+```
+== Parsed Logical Plan ==
+'Sort ['year ASC NULLS FIRST], true
++- 'Project ['year, 'q1, 'q2, CASE WHEN ('q1 < 'q2) THEN + WHEN ('q1 = 'q2) THEN   ELSE - END AS judge_q1_q2#26, ('q2 - 'q1) AS diff_q2_q1#27, 'SIGN(('q2 - 'q1)) AS sign_q2_q1#28]
+   +- 'UnresolvedRelation [quarterly_sales], [], false
+```
+
+<!-- empty-paragraph -->
+
+```
+== Analyzed Logical Plan ==
+year: int, q1: int, q2: int, judge_q1_q2: string, diff_q2_q1: int, sign_q2_q1: double
+Sort [year#21 ASC NULLS FIRST], true
++- Project [year#21, q1#22, q2#23, CASE WHEN (q1#22 < q2#23) THEN + WHEN (q1#22 = q2#23) THEN   ELSE - END AS judge_q1_q2#26, (q2#23 - q1#22) AS diff_q2_q1#27, sign(cast((q2#23 - q1#22) as double)) AS sign_q2_q1#28]
+   +- SubqueryAlias quarterly_sales
+      +- View (`quarterly_sales`, [year#21, q1#22, q2#23, q3#24, q4#25])
+         +- Project [_1#5 AS year#21, _2#6 AS q1#22, _3#7 AS q2#23, _4#8 AS q3#24, _5#9 AS q4#25]
+            +- LocalRelation [_1#5, _2#6, _3#7, _4#8, _5#9]
+```
+
+<!-- empty-paragraph -->
+
+```
+== Optimized Logical Plan ==
+Sort [year#21 ASC NULLS FIRST], true
++- LocalRelation [year#21, q1#22, q2#23, judge_q1_q2#26, diff_q2_q1#27, sign_q2_q1#28]
+```
+
+데이터가 인메모리(LocalRelation)이므로 I/O 없이 바로 처리 가능
+
+<!-- empty-paragraph -->
+
+```
+== Physical Plan ==
+AdaptiveSparkPlan isFinalPlan=false
++- Sort [year#21 ASC NULLS FIRST], true, 0
+   +- Exchange rangepartitioning(year#21 ASC NULLS FIRST, 2), ENSURE_REQUIREMENTS, [plan_id=11]
+      +- LocalTableScan [year#21, q1#22, q2#23, judge_q1_q2#26, diff_q2_q1#27, sign_q2_q1#28]
+```
+
+AdaptiveSparkPlan (AQE 활성화)
+
+└─ Sort \[year ASC\]
+
+└─ Exchange rangepartitioning(year ASC, 2파티션) ← 셔플
+
+└─ LocalTableScan
+
+<!-- empty-paragraph -->
+
+-   `LocalTableScan`: 인메모리 데이터 스캔
+    
+
+-   `Exchange rangepartitioning`: 정렬을 위한 셔플 발생 (파티션 2개)
+    
+-   `Sort`: 각 파티션 내 정렬
+    
+-   `AdaptiveSparkPlan isFinalPlan=false`: AQE가 아직 실행 전이므로 실행 중 통계에 따라 플랜이 바뀔 수 있음
+    
+
+<!-- empty-paragraph -->
