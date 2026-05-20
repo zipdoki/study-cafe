@@ -144,6 +144,44 @@ Catalyst 옵티마이저가 Logical Plan을 Physical Plan으로 변환하면서 
 
 <!-- empty-paragraph -->
 
+분산 환경에서는 Sort가 반드시 셔플을 유발한다.
+
+<!-- empty-paragraph -->
+
+\[왜 셔플이 필요한가?\]
+
+Spark 데이터는 여러 파티션에 분산되어 있습니다.
+
+Partition 0: \[2023, 2021, ...\]
+
+Partition 1: \[2022, 2024, ...\]
+
+<!-- empty-paragraph -->
+
+각 파티션 내부만 정렬해서는 전체 정렬(global sort) 이 보장되지 않는다.
+
+1.  `Exchange (rangepartitioning)`: 값의 범위에 따라 데이터를 재분배
+    
+    -   작은 값 → Partition 0, 큰 값 → Partition 1 식으로
+        
+2.  `Sort`: 재분배된 각 파티션 내부를 정렬
+    
+
+결과적으로 파티션 간 순서가 보장됩니다.
+
+<!-- empty-paragraph -->
+
+\[셔플이 안 일어나는 경우\]
+
+-   파티션이 1개: 이미 한 곳에 있으므로 재분배 불필요
+    
+-   `sortWithinPartitions()`: 파티션 내부만 정렬, 전체 순서 보장 안 함
+    
+-   이미 해당 키로 파티셔닝됨: 재분배 생략 가능
+    
+
+<!-- empty-paragraph -->
+
 #### 기타
 
 | 노드 | 설명 |
