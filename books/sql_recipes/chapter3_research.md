@@ -1,6 +1,6 @@
-## Spark Plan
+# Spark Plan
 
-### Spark Logical Plan 노드 종류
+## Spark Logical Plan 노드 종류
 
 Spark Logical Plan의 노드들은 크게 **Relation(데이터 소스)**, **Structural(구조)**, **Operator(변환)** 으로 나뉜다.
 
@@ -78,7 +78,7 @@ GlobalLimit 10
 
 <!-- empty-paragraph -->
 
-### Spark Physical Plan 노드 종류
+## Spark Physical Plan 노드 종류
 
 Catalyst 옵티마이저가 Logical Plan을 Physical Plan으로 변환하면서 실제 실행 방식이 결정된다.
 
@@ -149,7 +149,7 @@ Catalyst 옵티마이저가 Logical Plan을 Physical Plan으로 변환하면서 
 
 <!-- empty-paragraph -->
 
-### Logical와 Physical 비교
+## Logical와 Physical 비교
 
 | 개념 | Logical Plan | Physical Plan |
 | --- | --- | --- |
