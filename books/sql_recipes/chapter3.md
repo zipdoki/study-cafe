@@ -481,10 +481,76 @@ AdaptiveSparkPlan (AQE 활성화)
 
 ```sql
 SELECT year
-     , (COALESCE(q1, 0) + COALESCE(q2, 0) + COALESCE(q3, 0) + COALESCE(q4, 0) / 4 AS average
-FROM quarterly_sales
+     , (COALESCE(q1, 0) + COALESCE(q2, 0) + COALESCE(q3, 0) + COALESCE(q4, 0)) / 4 AS average
+FROM   quarterly_sales
 ORDER BY year
 ;
+```
+
+<!-- empty-paragraph -->
+
+```scala
+package study.spark
+
+object Test extends SparkTestBase {
+  def main(args: Array[String]): Unit = {
+    import spark.implicits._
+
+    Seq[(Int, Int, Int, Option[Int], Option[Int])](
+      (2015, 82000, 83000, Some(78000), Some(83000)),
+      (2016, 85000, 85000, Some(80000), Some(81000)),
+      (2017, 92000, 81000, None, None),
+    ).toDF("year", "q1", "q2", "q3", "q4")
+      .createOrReplaceTempView("quarterly_sales")
+
+    spark.sql(
+      """SELECT year
+              , (COALESCE(q1, 0) + COALESCE(q2, 0) + COALESCE(q3, 0) + COALESCE(q4, 0)) / 4 AS average
+         FROM   quarterly_sales
+         ORDER BY year"""
+    ).explain(true)
+  }
+}
+```
+
+<!-- empty-paragraph -->
+
+```
+== Parsed Logical Plan ==
+'Sort ['year ASC NULLS FIRST], true
++- 'Project ['year, (((('COALESCE('q1, 0) + 'COALESCE('q2, 0)) + 'COALESCE('q3, 0)) + 'COALESCE('q4, 0)) / 4) AS average#26]
+   +- 'UnresolvedRelation [quarterly_sales], [], false
+```
+
+<!-- empty-paragraph -->
+
+```
+== Analyzed Logical Plan ==
+year: int, average: double
+Sort [year#21 ASC NULLS FIRST], true
++- Project [year#21, (cast((((coalesce(q1#22, 0) + coalesce(q2#23, 0)) + coalesce(q3#24, 0)) + coalesce(q4#25, 0)) as double) / cast(4 as double)) AS average#26]
+   +- SubqueryAlias quarterly_sales
+      +- View (`quarterly_sales`, [year#21, q1#22, q2#23, q3#24, q4#25])
+         +- Project [_1#5 AS year#21, _2#6 AS q1#22, _3#7 AS q2#23, _4#8 AS q3#24, _5#9 AS q4#25]
+            +- LocalRelation [_1#5, _2#6, _3#7, _4#8, _5#9]
+```
+
+<!-- empty-paragraph -->
+
+```
+== Optimized Logical Plan ==
+Sort [year#21 ASC NULLS FIRST], true
++- LocalRelation [year#21, average#26]
+```
+
+<!-- empty-paragraph -->
+
+```
+== Physical Plan ==
+AdaptiveSparkPlan isFinalPlan=false
++- Sort [year#21 ASC NULLS FIRST], true, 0
+   +- Exchange rangepartitioning(year#21 ASC NULLS FIRST, 1), ENSURE_REQUIREMENTS, [plan_id=11]
+      +- LocalTableScan [year#21, average#26]
 ```
 
 <!-- empty-paragraph -->
