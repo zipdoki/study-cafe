@@ -327,6 +327,7 @@ html, body {
   padding: 1em 1.2em;
   overflow-x: auto;
   margin: 0.8em 0;
+  line-height: 1.8;
 }
 .ProseMirror pre code { background: none; border: none; color: inherit; padding: 0; font-size: 0.85em; }
 
@@ -399,6 +400,7 @@ html, body {
   margin: 0 !important;
   border-radius: 0 0 6px 6px;
   border-top: none !important;
+  line-height: 1.8;
 }
 
 /* ── Directory view ── */
