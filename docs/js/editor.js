@@ -797,6 +797,14 @@ export function getMarkdown() {
     headingStyle: 'atx',
     codeBlockStyle: 'fenced',
     bulletListMarker: '-',
+    blankReplacement(content, node) {
+      if (node.getAttribute?.('data-type') === 'toc') return '\n\n<!-- toc -->\n\n';
+      if (node.getAttribute?.('data-type') === 'mermaid') {
+        const code = decodeURIComponent(node.getAttribute('data-code') || '');
+        return `\n\n\`\`\`mermaid\n${code}\n\`\`\`\n\n`;
+      }
+      return node.isBlock ? '\n\n' : '';
+    },
   });
 
   td.addRule('table', {
