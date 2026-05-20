@@ -36,3 +36,32 @@ SELECT
 FROM mst_users
 ;
 ```
+
+```scala
+package study.spark
+
+object Test extends SparkTestBase {
+  import spark.implicits._
+
+  def main(args: Array[String]): Unit = {
+    Seq(
+      (1, 1),
+      (2, 2),
+      (3, 3),
+      (4, 1)
+    ).toDF("user_id", "register_device")
+      .createOrReplaceTempView("mst_users")
+
+    spark.sql(
+      """SELECT
+         user_id
+         , CASE
+         WHEN register_device = 1 THEN '데스크톱'
+         WHEN register_device = 2 THEN '스마트폰'
+         WHEN register_device = 3 THEN '애플리케이션'
+         END AS device_name
+         FROM mst_users"""
+    ).explain(true)
+  }
+}
+```
