@@ -85,3 +85,14 @@ LocalRelation [user_id#9, device_name#11]
 == Physical Plan ==
 LocalTableScan [user_id#9, device_name#11]
 ```
+
+1.  Parsed Logical Plan (파싱 단계)
+    
+    -   `'UnresolvedRelation [mst_users]` SQL 문자열을 AST로 변환한 단계. ' 접두어(e.g. `'user_id`, `'register_device`)는 아직 이름만 알고 실제 컬럼인지는 모르는 상태이다. `mst_users`도 실제 테이블인지 검증 전이다.
+        
+
+2.  Analyzed Logical Plan (분석 단계)
+    
+    -   Catalog를 조회해서
+        
+3.  Optimized Logical Plan (최적화 단계)
