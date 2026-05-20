@@ -554,3 +554,34 @@ AdaptiveSparkPlan isFinalPlan=false
 ```
 
 <!-- empty-paragraph -->
+
+coalesce는 네트워크 전송 없이 인접한 파티션을 그냥 합친다. 데이터가 이동하지 않고 파티션 경계만 재정의되는 개념이다.
+
+Partition 0: \[A, B\] ─┐
+
+Partition 1: \[C, D\] ─┤→ Partition 0: \[A, B, C, D, E, F\]
+
+Partition 2: \[E, F\] ─┘
+
+<!-- empty-paragraph -->
+
+단, 셔플이 없는 대신 데이터가 불균등할 수 있다. 원본이 이미 불균등하면 합쳐도 불균등하다.
+
+Partition 0: 데이터 100만 건 ─┐
+
+Partition 1: 데이터 1건 ─┘→ Partition 0: 100만 1건
+
+<!-- empty-paragraph -->
+
+균등하게 줄이고 싶다면 repartition을 써야 한다.
+
+<!-- empty-paragraph -->
+
+| ​ | coalesce | repartition |
+| --- | --- | --- |
+| 셔플 | X | O |
+| 파티션 수 | 줄이기만 가능 | 줄이기/늘리기 모두 가능 |
+| 방식 | 인접 파티션을 합침 | 데이터를 균등 재분배 |
+| 속도 | 빠름 | 느림 |
+
+<!-- empty-paragraph -->
