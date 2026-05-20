@@ -590,4 +590,54 @@ Partition 1: 데이터 1건 ─┘→ Partition 0: 100만 1건
 
 ### 1\. 그룹의 특징 잡기
 
+#### 테이블 전체의 특징량 계산하기
+
+```sql
+SELECT COUNT(*) AS total_count
+     , COUNT(DISTINCT user_id) AS user_count
+     , COUNT(DISTINCT product_id) AS product_count
+     , SUM(score) AS sum
+     , AVG(score) AS avg
+     , MAX(score) AS max
+     , MIN(score) AS min
+FROM  review
+;
+```
+
+<!-- empty-paragraph -->
+
+```scala
+package study.spark
+
+object Test extends SparkTestBase {
+  def main(args: Array[String]): Unit = {
+    import spark.implicits._
+
+    Seq(
+      ("U001", "A001", 4.0),
+      ("U001", "A002", 5.0),
+      ("U001", "A003", 5.0),
+      ("U002", "A001", 3.0),
+      ("U002", "A002", 3.0),
+      ("U002", "A003", 4.0),
+      ("U003", "A001", 5.0),
+      ("U003", "A002", 4.0),
+      ("U003", "A003", 4.0),
+    ).toDF("user_id", "product_id", "score")
+      .createOrReplaceTempView("review")
+
+    spark.sql(
+      """SELECT COUNT(*) AS total_count
+              , COUNT(DISTINCT user_id) AS user_count
+              , COUNT(DISTINCT product_id) AS product_count
+              , SUM(score) AS sum
+              , AVG(score) AS avg
+              , MAX(score) AS max
+              , MIN(score) AS min
+         FROM  review"""
+    ).explain(true)
+  }
+}
+```
+
 <!-- empty-paragraph -->
