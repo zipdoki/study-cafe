@@ -401,6 +401,17 @@ object Test extends SparkTestBase {
       +- OneRowRelation
 ```
 
+OneRowRelation: Spark SQL에서 FROM 없이 SELECT만 쓰면, "행이 정확히 1개인 빈 소스"에서 읽는다고 해석한다.
+
+-   컬럼 없음, 행 1개짜리 가상 테이블
+    
+-   그 위에 CAST('2016-01-30 12:00:00' AS timestamp) 를 프로젝션
+    
+-   결과: stamp 컬럼 1개, 행 1개
+    
+
+즉 Spark 파서가 SELECT <expr> (FROM 없음) 패턴을 만나면 자동으로 OneRowRelation을 소스로 삽입한다.
+
 <p></p>
 
 ```
@@ -420,6 +431,8 @@ Project [2016-01-30 12:00:00 AS stamp#0, 2016 AS year#1, 1 AS month#2, 30 AS day
 +- OneRowRelation
 ```
 
+Catalyst Optimizer가 상수 폴딩(Constant Folding) 을 적용한 단계. 입력이 리터럴 상수이므로 YEAR(...), MONTH(...) 등을 실행 시 계산하지 않고 컴파일 타임에 미리 계산해서 2016, 1, 30, 12로 치환한다.
+
 <p></p>
 
 ```
@@ -429,3 +442,14 @@ Project [2016-01-30 12:00:00 AS stamp#0, 2016 AS year#1, 1 AS month#2, 30 AS day
 ```
 
 <p></p>
+
+상수 리터럴이 입력이라 Catalyst가 모든 날짜 함수를 컴파일 타임에 계산해버렸고, 실제 실행은 단순 상수 출력만 하는 매우 최적화된 플랜이 된다.
+
+상수 리터럴 입력: Catalyst Optimizer 입장에서
+
+-   컬럼값: 실행 시점에 각 행마다 다른 값이 들어오므로 미리 계산 불가
+    
+-   리터럴: 실행 전에 이미 값이 확정되어 있으므로 미리 계산 가능
+    
+
+그래서 YEAR('2016-01-30 12:00:00') 같은 표현식은 실행 전에 2016으로 대체할 수 있고, 이걸 상수 폴딩(Constant Folding) 이라고 한다. Optimized Plan에서 함수 호출 없이 숫자가 바로 나온 이유이다.
