@@ -319,7 +319,7 @@ year=2021 매칭을 하려면 quarterly\_sales의 Partition 0과 other\_table의
 
 \[Broadcast Join으로 셔플 생략\]
 
-other\_table이 작으면 Broadcast, 크면 셔플이 발생하는 Sort Merge Join으로 처리됩니다. 어느 쪽을 선택할지는 Spark가 자동으로 판단합니다. other\_table이 작으면 Spark가 자동으로 모든 Executor에 복사합니다.
+other\_table이 작으면 Broadcast, 크면 셔플이 발생하는 Sort Merge Join으로 처리한다. 어느 쪽을 선택할지는 Spark가 자동으로 판단한다. other\_table이 작으면 Spark가 자동으로 모든 Executor에 복사한다.
 
 Partition 0: 2020(qs), 2021(qs) + other\_table\[2021, 2023\] 복사 → 2021 매칭
 
