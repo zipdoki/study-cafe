@@ -98,6 +98,8 @@ Project [user_id#9, CASE WHEN (register_device#10 = 1) THEN 데스크톱 WHEN (r
 
 Catalog를 조회해서 ' 접두어가 사라지고 타입이 확정된다. `mst_users` 가 실제로는 `Seq`로 만든 `LocalRelation(_1, 2)` 을 `user_id`, `register_device`로 alias한 View임이 드러난다.
 
+<p></p>
+
 Optimized Logical Plan (최적화 단계)
 
 ```
