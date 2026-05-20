@@ -641,3 +641,35 @@ object Test extends SparkTestBase {
 ```
 
 <!-- empty-paragraph -->
+
+```
+== Parsed Logical Plan ==
+'Project ['COUNT(1) AS total_count#16, 'COUNT(distinct 'user_id) AS user_count#17, 'COUNT(distinct 'product_id) AS product_count#18, 'SUM('score) AS sum#19, 'AVG('score) AS avg#20, 'MAX('score) AS max#21, 'MIN('score) AS min#22]
++- 'UnresolvedRelation [review], [], false
+
+== Analyzed Logical Plan ==
+total_count: bigint, user_count: bigint, product_count: bigint, sum: double, avg: double, max: double, min: double
+Aggregate [count(1) AS total_count#16L, count(distinct user_id#13) AS user_count#17L, count(distinct product_id#14) AS product_count#18L, sum(score#15) AS sum#19, avg(score#15) AS avg#20, max(score#15) AS max#21, min(score#15) AS min#22]
++- SubqueryAlias review
+   +- View (`review`, [user_id#13, product_id#14, score#15])
+      +- Project [_1#3 AS user_id#13, _2#4 AS product_id#14, _3#5 AS score#15]
+         +- LocalRelation [_1#3, _2#4, _3#5]
+
+== Optimized Logical Plan ==
+Aggregate [coalesce(first(count(1)#34L, true) FILTER (WHERE (gid#30 = 0)), 0) AS total_count#16L, count(review.user_id#31) FILTER (WHERE (gid#30 = 1)) AS user_count#17L, count(review.product_id#32) FILTER (WHERE (gid#30 = 2)) AS product_count#18L, first(sum(review.score)#36, true) FILTER (WHERE (gid#30 = 0)) AS sum#19, first(avg(review.score)#38, true) FILTER (WHERE (gid#30 = 0)) AS avg#20, first(max(review.score)#40, true) FILTER (WHERE (gid#30 = 0)) AS max#21, first(min(review.score)#42, true) FILTER (WHERE (gid#30 = 0)) AS min#22]
++- Aggregate [review.user_id#31, review.product_id#32, gid#30], [review.user_id#31, review.product_id#32, gid#30, count(1) AS count(1)#34L, sum(review.score#33) AS sum(review.score)#36, avg(review.score#33) AS avg(review.score)#38, max(review.score#33) AS max(review.score)#40, min(review.score#33) AS min(review.score)#42]
+   +- Expand [[null, null, 0, score#15], [user_id#13, null, 1, null], [null, product_id#14, 2, null]], [review.user_id#31, review.product_id#32, gid#30, review.score#33]
+      +- LocalRelation [user_id#13, product_id#14, score#15]
+
+== Physical Plan ==
+AdaptiveSparkPlan isFinalPlan=false
++- HashAggregate(keys=[], functions=[first(count(1)#34L, true), count(review.user_id#31), count(review.product_id#32), first(sum(review.score)#36, true), first(avg(review.score)#38, true), first(max(review.score)#40, true), first(min(review.score)#42, true)], output=[total_count#16L, user_count#17L, product_count#18L, sum#19, avg#20, max#21, min#22])
+   +- HashAggregate(keys=[], functions=[partial_first(count(1)#34L, true) FILTER (WHERE (gid#30 = 0)), partial_count(review.user_id#31) FILTER (WHERE (gid#30 = 1)), partial_count(review.product_id#32) FILTER (WHERE (gid#30 = 2)), partial_first(sum(review.score)#36, true) FILTER (WHERE (gid#30 = 0)), partial_first(avg(review.score)#38, true) FILTER (WHERE (gid#30 = 0)), partial_first(max(review.score)#40, true) FILTER (WHERE (gid#30 = 0)), partial_first(min(review.score)#42, true) FILTER (WHERE (gid#30 = 0))], output=[first#56L, valueSet#57, count#58L, count#59L, first#60, valueSet#61, first#62, valueSet#63, first#64, valueSet#65, first#66, valueSet#67])
+      +- HashAggregate(keys=[review.user_id#31, review.product_id#32, gid#30], functions=[count(1), sum(review.score#33), avg(review.score#33), max(review.score#33), min(review.score#33)], output=[review.user_id#31, review.product_id#32, gid#30, count(1)#34L, sum(review.score)#36, avg(review.score)#38, max(review.score)#40, min(review.score)#42])
+         +- Exchange hashpartitioning(review.user_id#31, review.product_id#32, gid#30, 1), ENSURE_REQUIREMENTS, [plan_id=25]
+            +- HashAggregate(keys=[review.user_id#31, review.product_id#32, gid#30], functions=[partial_count(1), partial_sum(review.score#33), partial_avg(review.score#33), partial_max(review.score#33), partial_min(review.score#33)], output=[review.user_id#31, review.product_id#32, gid#30, count#74L, sum#75, sum#76, count#77L, max#78, min#79])
+               +- Expand [[null, null, 0, score#15], [user_id#13, null, 1, null], [null, product_id#14, 2, null]], [review.user_id#31, review.product_id#32, gid#30, review.score#33]
+                  +- LocalTableScan [user_id#13, product_id#14, score#15]
+```
+
+<!-- empty-paragraph -->
