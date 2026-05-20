@@ -294,6 +294,29 @@ year=2021 매칭을 하려면 quarterly\_sales의 Partition 0과 other\_table의
 
 <!-- empty-paragraph -->
 
+\[3단계: Semi Join 결과를 왼쪽 테이블만 반환\]
+
+일반 JOIN과 달리 other\_table 컬럼은 버린다.  
+
+| year | q1 | q2 | q3 | q4 |
+| --- | --- | --- | --- | --- |
+| 2021 | 200 | 180 | 220 | 210 |
+| 2023 | 400 | 350 | 380 | 360 |
+
+<!-- empty-paragraph -->
+
+\[Broadcast Join으로 셔플 생략\]
+
+other\_table이 작으면 Broadcast, 크면 셔플이 발생하는 Sort Merge Join으로 처리됩니다. 어느 쪽을 선택할지는 Spark가 자동으로 판단합니다. other\_table이 작으면 Spark가 자동으로 모든 Executor에 복사합니다.
+
+Partition 0: 2020(qs), 2021(qs) + other\_table\[2021, 2023\] 복사 → 2021 매칭
+
+Partition 1: 2022(qs), 2023(qs) + other\_table\[2021, 2023\] 복사 → 2023 매칭
+
+이 경우 셔플 없이 각 파티션에서 로컬 매칭한다.
+
+<!-- empty-paragraph -->
+
 ### 5\. UDAF (사용자 정의 집계 함수)
 
 ```sql
