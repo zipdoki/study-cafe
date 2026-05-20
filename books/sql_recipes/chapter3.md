@@ -368,3 +368,37 @@ ORDER BY year
 ```
 
 <!-- empty-paragraph -->
+
+```scala
+package study.spark
+
+object Test extends SparkTestBase {
+  def main(args: Array[String]): Unit = {
+    import spark.implicits._
+
+    Seq[(Int, Int, Int, Option[Int], Option[Int])](
+      (2015, 82000, 83000, Some(78000), Some(83000)),
+      (2016, 85000, 85000, Some(80000), Some(81000)),
+      (2017, 92000, 81000, None, None),
+    ).toDF("year", "q1", "q2", "q3", "q4")
+      .createOrReplaceTempView("quarterly_sales")
+
+    spark.sql(
+      """SELECT year
+              , q1
+              , q2
+              , CASE
+                 WHEN q1 < q2 THEN '+'
+                 WHEN q1 = q2 THEN ' '
+                 ELSE '-'
+                END AS judge_q1_q2
+              , q2 - q1 AS diff_q2_q1
+              , SIGN(q2 - q1) AS sign_q2_q1
+         FROM  quarterly_sales
+         ORDER BY year"""
+    ).explain(true)
+  }
+}
+```
+
+<!-- empty-paragraph -->
