@@ -373,7 +373,23 @@ FROM
 
 <p></p>
 
-<p></p>
+```scala
+package study.spark
+
+object Test extends SparkTestBase {
+  def main(args: Array[String]): Unit = {
+    spark.sql(
+      """SELECT stamp
+              , YEAR(stamp)  AS year
+              , MONTH(stamp) AS month
+              , DAY(stamp)   AS day
+              , HOUR(stamp)  AS hour
+         FROM
+            (SELECT CAST('2016-01-30 12:00:00' AS timestamp) AS stamp) AS t"""
+    ).explain(true)
+  }
+}
+```
 
 <p></p>
 
