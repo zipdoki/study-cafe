@@ -65,3 +65,23 @@ object Test extends SparkTestBase {
   }
 }
 ```
+
+```
+== Parsed Logical Plan ==
+'Project ['user_id, CASE WHEN ('register_device = 1) THEN 데스크톱 WHEN ('register_device = 2) THEN 스마트폰 WHEN ('register_device = 3) THEN 애플리케이션 END AS device_name#11]
++- 'UnresolvedRelation [mst_users], [], false
+
+== Analyzed Logical Plan ==
+user_id: int, device_name: string
+Project [user_id#9, CASE WHEN (register_device#10 = 1) THEN 데스크톱 WHEN (register_device#10 = 2) THEN 스마트폰 WHEN (register_device#10 = 3) THEN 애플리케이션 END AS device_name#11]
++- SubqueryAlias mst_users
+   +- View (`mst_users`, [user_id#9, register_device#10])
+      +- Project [_1#2 AS user_id#9, _2#3 AS register_device#10]
+         +- LocalRelation [_1#2, _2#3]
+
+== Optimized Logical Plan ==
+LocalRelation [user_id#9, device_name#11]
+
+== Physical Plan ==
+LocalTableScan [user_id#9, device_name#11]
+```
