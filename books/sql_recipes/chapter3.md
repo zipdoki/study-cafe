@@ -455,7 +455,6 @@ AdaptiveSparkPlan (AQE 활성화)
 
 -   `LocalTableScan`: 인메모리 데이터 스캔
     
-
 -   `Exchange rangepartitioning`: 정렬을 위한 셔플 발생 (파티션 2개)
     
 -   `Sort`: 각 파티션 내 정렬
@@ -464,3 +463,11 @@ AdaptiveSparkPlan (AQE 활성화)
     
 
 <!-- empty-paragraph -->
+
+\[이번 플랜에서 특이한 점\]
+
+`Exchange rangepartitioning(year ASC, 2파티션)`
+
+-   데이터가 LocalRelation(인메모리, 단일 노드)임에도 셔플이 발생했다. 이건 `spark.sql.shuffle.partitions` 기본값이 200이라 2파티션으로 줄었지만, 그래도 Exchange 자체는 생긴 것이다.
+    
+-   소량 데이터라면 `spark.conf.set("spark.sql.shuffle.partitions", "1")` 로 파티션을 1개로 설정하면 Exchange가 제거된다.
