@@ -25,6 +25,8 @@ u002    | 2016-08-26    | 2
 u003    | 2016-08-27    | 3
 ```
 
+<p></p>
+
 ```sql
 SELECT
   user_id
@@ -36,6 +38,8 @@ SELECT
 FROM mst_users
 ;
 ```
+
+<p></p>
 
 ```scala
 package study.spark
@@ -65,6 +69,8 @@ object Test extends SparkTestBase {
   }
 }
 ```
+
+<p></p>
 
 Parsed Logical Plan (파싱 단계)
 
@@ -97,7 +103,11 @@ Optimized Logical Plan (최적화 단계)
 LocalRelation [user_id#9, device_name#11]
 ```
 
+<p></p>
+
 ```
 == Physical Plan ==
 LocalTableScan [user_id#9, device_name#11]
 ```
+
+<p></p>
