@@ -356,6 +356,8 @@ LocalTableScan [stamp#9, referrer_host#11, referrer_host2#12, referrer_host3#13]
 
 <p></p>
 
+<p></p>
+
 #### 날짜/시각에서 특정 필드 추출하기
 
 <p></p>
