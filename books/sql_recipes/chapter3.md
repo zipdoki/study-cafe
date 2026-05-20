@@ -393,10 +393,39 @@ object Test extends SparkTestBase {
 
 <p></p>
 
-<p></p>
+```
+== Parsed Logical Plan ==
+'Project ['stamp, 'YEAR('stamp) AS year#1, 'MONTH('stamp) AS month#2, 'DAY('stamp) AS day#3, 'HOUR('stamp) AS hour#4]
++- 'SubqueryAlias t
+   +- 'Project [cast(2016-01-30 12:00:00 as timestamp) AS stamp#0]
+      +- OneRowRelation
+```
 
 <p></p>
 
+```
+== Analyzed Logical Plan ==
+stamp: timestamp, year: int, month: int, day: int, hour: int
+Project [stamp#0, year(cast(stamp#0 as date)) AS year#1, month(cast(stamp#0 as date)) AS month#2, day(cast(stamp#0 as date)) AS day#3, hour(stamp#0, Some(Asia/Seoul)) AS hour#4]
++- SubqueryAlias t
+   +- Project [cast(2016-01-30 12:00:00 as timestamp) AS stamp#0]
+      +- OneRowRelation
+```
+
 <p></p>
+
+```
+== Optimized Logical Plan ==
+Project [2016-01-30 12:00:00 AS stamp#0, 2016 AS year#1, 1 AS month#2, 30 AS day#3, 12 AS hour#4]
++- OneRowRelation
+```
+
+<p></p>
+
+```
+== Physical Plan ==
+*(1) Project [2016-01-30 12:00:00 AS stamp#0, 2016 AS year#1, 1 AS month#2, 30 AS day#3, 12 AS hour#4]
++- *(1) Scan OneRowRelation[]
+```
 
 <p></p>
