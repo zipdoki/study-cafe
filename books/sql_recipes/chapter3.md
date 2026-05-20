@@ -109,6 +109,8 @@ LocalRelation [user_id#9, device_name#11]
 
 Catalyst 옵티마이저가 중간 단계들을 전부 제거하고 데이터를 그냥 메모리에서 바로 읽는 것으로 축약했다. View, SubqueryAlias, Project 레이어가 모두 사라졌다.
 
+<p></p>
+
 Physical Plan (물리 플랜)
 
 ```
@@ -284,5 +286,53 @@ Catalyst 옵티마이저가 Logical Plan을 Physical Plan으로 변환하면서 
 | 집계 | Aggregate | HashAggregate, SortAggregate 등 |
 | 데이터 소스 | LocalRelation, LogicalRelation | LocalTableScan, FileScan 등 |
 | Shuffle | 없음 | Exchange |
+
+<p></p>
+
+* * *
+
+<p></p>
+
+### 2\. URL에서 요소 추출하기
+
+#### 레퍼러로 어떤 웹 페이지를 거쳐 넘어왔는지 판별하기
+
+```sql
+SELECT stamp
+     , substring(referrer from 'https?://([^/]*') AS referrer_host
+     , regexp_replace(regexp_substr(referrer, 'https?://[^/]*'), 'https?://', '')
+     , parse_url(referrer, 'HOST') AS referrer_host
+     , host(referrer) AS referrer_host
+FROM access_log
+;
+```
+
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p></p>
 
 <p></p>
