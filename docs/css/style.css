@@ -836,7 +836,6 @@ html, body {
   border-collapse: collapse;
   width: 100%;
   border: 1px solid var(--border);
-  font-size: 14px;
   table-layout: auto;
 }
 .ProseMirror table th,

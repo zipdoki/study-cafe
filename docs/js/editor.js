@@ -775,7 +775,7 @@ export function setContent(markdownContent) {
 
 export function getMarkdown() {
   if (!editor) return '';
-  const html = editor.getHTML();
+  const html = editor.getHTML().replace(/<p><\/p>/g, '<p>​</p>');
 
   const td = new window.TurndownService({
     headingStyle: 'atx',
@@ -824,6 +824,11 @@ export function getMarkdown() {
   td.addRule('image', {
     filter: 'img',
     replacement: (_, node) => `![${node.getAttribute('alt') || ''}](${node.getAttribute('src') || ''})`,
+  });
+
+  td.addRule('emptyParagraph', {
+    filter: node => node.nodeName === 'P' && node.textContent === '​',
+    replacement: () => '\n\n<p></p>\n\n',
   });
 
   return td.turndown(html);
