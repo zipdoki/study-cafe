@@ -252,6 +252,46 @@ WHERE year IN (SELECT year FROM other_table)
 
 내부적으로 Semi Join으로 처리하기 때문에 셔플 발생. 단, 작은 테이블이면 Broadcast Join으로 최적화되어 셔플 생략 가능하다.
 
+일반 JOIN은 양쪽 테이블 컬럼을 모두 반환하지만, Semi Join은 왼쪽 테이블 컬럼만 반환하고 오른쪽은 매칭 확인용으로만 사용합니다. 이를 Semi Join이라 한다.
+
+<!-- empty-paragraph -->
+
+\[1단계: IN 서브쿼리를 Semi Join으로 변환\]
+
+Spark Catalyst Optimizer가 위의 쿼리를 내부적으로 이렇게 변환한다. IN (서브쿼리)를 그대로 처리하지 않고 Join 연산으로 재작성하는 이유는 Join이 분산 처리에 더 최적화되어 있기 때문이다.
+
+```sql
+SELECT quarterly_sales.*
+FROM quarterly_sales
+SEMI JOIN other_table ON quarterly_sales.year = other_table.year
+```
+
+<!-- empty-paragraph -->
+
+\[2단계: Semi Join 실행하기 때문에 셔플 발생\]
+
+Join을 하려면 같은 year를 가진 행이 같은 파티션에 있어야 한다.
+
+<!-- empty-paragraph -->
+
+셔플 전
+
+| quarterly_sales | other_table |
+| --- | --- |
+| Partition 0: 2020, 2021 | Partition 0: 2023 |
+| Partition 1: 2022, 2023 | Partition 1: 2021 |
+
+year=2021 매칭을 하려면 quarterly\_sales의 Partition 0과 other\_table의 Partition 1이 만나야 하는데 셔플 전에는 불가능하다.
+
+<!-- empty-paragraph -->
+
+셔플 후 (year 기준 hashpartitioning)
+
+| quarterly_sales | other_table |
+| --- | --- |
+| Partition 0: 2021 | Partition 0: 2021 |
+| Partition 1: 2020, 2022, 2023 | Partition 1: 2023 |
+
 <!-- empty-paragraph -->
 
 ### 5\. UDAF (사용자 정의 집계 함수)
