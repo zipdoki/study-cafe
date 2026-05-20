@@ -296,14 +296,14 @@ year=2021 매칭을 하려면 quarterly\_sales의 Partition 0과 other\_table의
 
 \[3단계: Semi Join 결과를 왼쪽 테이블만 반환\]
 
-일반 JOIN과 달리 other\_table 컬럼은 버린다.  
+일반 JOIN과 달리 other\_table 컬럼은 버린다.
 
 | year | q1 | q2 | q3 | q4 |
 | --- | --- | --- | --- | --- |
 | 2021 | 200 | 180 | 220 | 210 |
 | 2023 | 400 | 350 | 380 | 360 |
 
-<!-- empty-paragraph -->
+ㅇ
 
 \[Broadcast Join으로 셔플 생략\]
 
