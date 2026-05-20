@@ -348,3 +348,23 @@ LocalTableScan [user_id#13, pref_city#16]
 ```
 
 <!-- empty-paragraph -->
+
+### 2\. 여러 개의 값 비교하기
+
+```sql
+SELECT year
+     , q1
+     , q2
+     , CASE
+        WHEN q1 < q2 THEN '+'
+        WHEN q1 = q2 THEN ' '
+        ELSE '-'
+       END AS judge_q1_q2
+     , q2 - q1 AS diff_q2_q1
+     , SIGN(q2 - q1) AS sign_q2_q1
+FROM  quarterly_sales
+ORDER BY year
+;
+```
+
+<!-- empty-paragraph -->
