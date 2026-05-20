@@ -156,8 +156,11 @@ function mount(editor) {
     updateUI(cell);
   }
 
+  const onScroll = () => hideUI();
+
   root.addEventListener('mouseover', onHover);
   root.addEventListener('mouseleave', schedHide);
+  document.addEventListener('scroll', onScroll, { passive: true, capture: true });
   interactive.forEach(e => {
     e.addEventListener('mouseenter', cancelHide);
     e.addEventListener('mouseleave', schedHide);
@@ -275,6 +278,7 @@ function mount(editor) {
   return () => {
     root.removeEventListener('mouseover', onHover);
     root.removeEventListener('mouseleave', schedHide);
+    document.removeEventListener('scroll', onScroll, { capture: true });
     allEls.forEach(e => e.remove());
   };
 }

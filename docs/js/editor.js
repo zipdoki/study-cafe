@@ -214,6 +214,20 @@ function isSeparatorRow(cells) {
   return cells.every(c => /^[-: ]+$/.test(c));
 }
 
+const TextReplacements = Extension.create({
+  name: 'textReplacements',
+  addInputRules() {
+    return [
+      new InputRule({
+        find: /-->$/,
+        handler: ({ state, range }) => {
+          state.tr.replaceWith(range.from, range.to, state.schema.text('→'));
+        },
+      }),
+    ];
+  },
+});
+
 const ListItemKeys = Extension.create({
   name: 'listItemKeys',
   addKeyboardShortcuts() {
@@ -700,6 +714,7 @@ export function initEditor(onUpdate, onSelectionUpdate, onImageUpload, onSave) {
     extensions: [
       StarterKit.configure({ codeBlock: false }),
       SaveShortcut,
+      TextReplacements,
       CodeBlockWithLang,
       MermaidBlock,
       TocBlock,
@@ -766,7 +781,8 @@ export function setContent(markdownContent) {
       /```mermaid\n([\s\S]*?)```/g,
       (_, code) => `<div data-type="mermaid" data-code="${encodeURIComponent(code.trim())}"></div>`,
     );
-  const raw = window.marked ? window.marked.parse(processed) : processed;
+  const raw = (window.marked ? window.marked.parse(processed) : processed)
+    .replace(/<!-- empty-paragraph -->/g, '<p></p>');
   const html = raw.replace(/<code([^>]*)>([\s\S]*?)<\/code>/g, (_, attrs, content) =>
     `<code${attrs}>${content.replace(/\n$/, '')}</code>`
   );
@@ -828,7 +844,7 @@ export function getMarkdown() {
 
   td.addRule('emptyParagraph', {
     filter: node => node.nodeName === 'P' && node.textContent === '​',
-    replacement: () => '\n\n<p></p>\n\n',
+    replacement: () => '\n\n<!-- empty-paragraph -->\n\n',
   });
 
   return td.turndown(html);

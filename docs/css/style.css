@@ -783,7 +783,6 @@ html, body {
 .toc-item:hover { text-decoration: underline; }
 .toc-h1 { font-weight: 800; }
 .toc-h2 { font-weight: 800; }
-.toc-h3 { font-size: 13px; }
 .toc-empty { padding: 8px 16px; font-size: 13px; font-style: italic; }
 
 .mermaid-block {
