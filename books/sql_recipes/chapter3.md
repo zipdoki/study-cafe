@@ -588,4 +588,6 @@ Partition 1: 데이터 1건 ─┘→ Partition 0: 100만 1건
 
 ## 7강 하나의 테이블에 대한 조작
 
+### 1\. 그룹의 특징 잡기
+
 <!-- empty-paragraph -->
