@@ -1,0 +1,33 @@
+plugins {
+    id 'scala'
+}
+
+def scalaVersion = '2.13.18'
+def sparkVersion = '4.1.1'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.scala-lang:scala-library:${scalaVersion}"
+
+    implementation "org.apache.spark:spark-core_2.13:${sparkVersion}"
+    implementation "org.apache.spark:spark-sql_2.13:${sparkVersion}"
+    implementation "org.apache.spark:spark-mllib_2.13:${sparkVersion}"
+
+    testImplementation "org.scalatest:scalatest_2.13:3.2.17"
+    testImplementation "org.scalatestplus:junit-4-13_2.13:3.2.17.0"
+}
+
+test {
+    useJUnit()
+}
+
+tasks.withType(JavaExec).configureEach {
+    jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED',
+            '--add-opens=java.base/java.nio=ALL-UNNAMED',
+            '--add-opens=java.base/sun.nio.ch=ALL-UNNAMED',
+            '--add-opens=java.base/java.util=ALL-UNNAMED',
+            '--add-opens=java.base/java.lang.invoke=ALL-UNNAMED'
+}

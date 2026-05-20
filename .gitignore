@@ -4,3 +4,8 @@ pages-worktree/
 .env
 .idea/
 .omc/
+
+# Gradle
+.gradle/
+build/
+

@@ -5,7 +5,7 @@ const fs = require('fs');
 const app = express();
 const PORT = 3000;
 const BASE = '/study-cafe';
-const CONTENT_DIR = path.join(__dirname, 'pages-worktree');
+const CONTENT_DIR = path.join(__dirname, '..', 'pages-worktree');
 
 function collectMdFiles(dir, root) {
   const results = [];
@@ -41,10 +41,11 @@ app.get('/api/file/*', (req, res) => {
 });
 
 app.use('/images', express.static(path.join(CONTENT_DIR, 'images')));
-app.use(BASE, express.static(path.join(__dirname, 'docs')));
+const DOCS_DIR = path.join(__dirname, '..', 'docs');
+app.use(BASE, express.static(DOCS_DIR));
 
 app.get(`${BASE}/*`, (req, res) => {
-  res.sendFile(path.join(__dirname, 'docs', 'index.html'));
+  res.sendFile(path.join(DOCS_DIR, 'index.html'));
 });
 
 app.get('/', (req, res) => res.redirect(BASE + '/'));
