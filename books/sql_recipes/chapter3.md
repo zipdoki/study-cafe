@@ -76,6 +76,8 @@ Parsed Logical Plan (파싱 단계)
 
 `'UnresolvedRelation [mst_users]` SQL 문자열을 AST로 변환한 단계. ' 접두어(e.g. `'user_id`, `'register_device`)는 아직 이름만 알고 실제 컬럼인지는 모르는 상태이다. `mst_users`도 실제 테이블인지 검증 전이다.
 
+Analyzed Logical Plan (분석 단계)
+
 ```
 == Analyzed Logical Plan ==
 user_id: int, device_name: string
@@ -86,17 +88,14 @@ Project [user_id#9, CASE WHEN (register_device#10 = 1) THEN 데스크톱 WHEN (r
          +- LocalRelation [_1#2, _2#3]
 ```
 
-Analyzed Logical Plan (분석 단계)
+Catalog를 조회해서 ' 접두어가 사라지고 타입이 확정된다. `mst_users` 가 실제로는 `Seq`로 만든 `LocalRelation(_1, 2)` 을 `user_id`, `register_device`로 alias한 View임이 드러난다.
 
--   Catalog를 조회해서
-    
+Optimized Logical Plan (최적화 단계)
 
 ```
 == Optimized Logical Plan ==
 LocalRelation [user_id#9, device_name#11]
 ```
-
-Optimized Logical Plan (최적화 단계)
 
 ```
 == Physical Plan ==
