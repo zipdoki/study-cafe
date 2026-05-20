@@ -301,3 +301,50 @@ FROM   mst_user_location
 ```
 
 <!-- empty-paragraph -->
+
+```scala
+package study.spark
+
+object Test extends SparkTestBase {
+  def main(args: Array[String]): Unit = {
+    import spark.implicits._
+
+    Seq(
+      (1, "서울특별시", "강남구"),
+      (2, "경기도", "수원시"),
+      (3, "부산광역시", "해운대구")
+    ).toDF("user_id", "pref_name", "city_name")
+      .createOrReplaceTempView("mst_user_location")
+
+    spark.sql(
+      """SELECT user_id
+              , CONCAT(pref_name, city_name) AS pref_city
+         FROM   mst_user_location"""
+    ).explain(true)
+  }
+}
+```
+
+<!-- empty-paragraph -->
+
+```
+== Parsed Logical Plan ==
+'Project ['user_id, 'CONCAT('pref_name, 'city_name) AS pref_city#16]
++- 'UnresolvedRelation [mst_user_location], [], false
+
+== Analyzed Logical Plan ==
+user_id: int, pref_city: string
+Project [user_id#13, concat(pref_name#14, city_name#15) AS pref_city#16]
++- SubqueryAlias mst_user_location
+   +- View (`mst_user_location`, [user_id#13, pref_name#14, city_name#15])
+      +- Project [_1#3 AS user_id#13, _2#4 AS pref_name#14, _3#5 AS city_name#15]
+         +- LocalRelation [_1#3, _2#4, _3#5]
+
+== Optimized Logical Plan ==
+LocalRelation [user_id#13, pref_city#16]
+
+== Physical Plan ==
+LocalTableScan [user_id#13, pref_city#16]
+```
+
+<!-- empty-paragraph -->
