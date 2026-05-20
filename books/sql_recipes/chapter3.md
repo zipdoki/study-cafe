@@ -351,6 +351,8 @@ LocalTableScan [user_id#13, pref_city#16]
 
 ### 2\. 여러 개의 값 비교하기
 
+#### 분기별 매출 증감 판정하기
+
 ```sql
 SELECT year
      , q1
@@ -471,3 +473,18 @@ AdaptiveSparkPlan (AQE 활성화)
 -   데이터가 LocalRelation(인메모리, 단일 노드)임에도 셔플이 발생했다. 이건 `spark.sql.shuffle.partitions` 기본값이 200이라 2파티션으로 줄었지만, 그래도 Exchange 자체는 생긴 것이다.
     
 -   소량 데이터라면 `spark.conf.set("spark.sql.shuffle.partitions", "1")` 로 파티션을 1개로 설정하면 Exchange가 제거된다.
+    
+
+<!-- empty-paragraph -->
+
+#### 연간 평균 4분기 매출 계산하기
+
+```sql
+SELECT year
+     , (COALESCE(q1, 0) + COALESCE(q2, 0) + COALESCE(q3, 0) + COALESCE(q4, 0) / 4 AS average
+FROM quarterly_sales
+ORDER BY year
+;
+```
+
+<!-- empty-paragraph -->
