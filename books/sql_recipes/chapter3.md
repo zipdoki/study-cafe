@@ -25,8 +25,6 @@ u002    | 2016-08-26    | 2
 u003    | 2016-08-27    | 3
 ```
 
-<p></p>
-
 ```sql
 SELECT
   user_id
@@ -38,8 +36,6 @@ SELECT
 FROM mst_users
 ;
 ```
-
-<p></p>
 
 ```scala
 package study.spark
@@ -69,8 +65,6 @@ object Test extends SparkTestBase {
   }
 }
 ```
-
-<p></p>
 
 Parsed Logical Plan (파싱 단계)
 
@@ -103,11 +97,15 @@ Optimized Logical Plan (최적화 단계)
 LocalRelation [user_id#9, device_name#11]
 ```
 
-<p></p>
+Catalyst 옵티마이저가 중간 단계들을 전부 제거하고 데이터를 그냥 메모리에서 바로 읽는 것으로 축약했다. View, SubqueryAlias, Project 레이어가 모두 사라졌다.
+
+Physical Plan (물리 플랜)
 
 ```
 == Physical Plan ==
 LocalTableScan [user_id#9, device_name#11]
 ```
 
-<p></p>
+실제 실행 방식이다. LocalTableScan은 네트워크/디스크 I/O 없이 드라이버 메모리에 있는 데이터를 그대로 스캔하는 가장 단순한 실행이다. `Seq`로 만든 데이터라 Shuffle도 없다.
+
+\-> 이 쿼리는 로컬 메모리 데이터라 옵티마이저가 모든 중간 단계를 제거하고 LocalTableScan 하나로 처리한다.
