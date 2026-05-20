@@ -207,3 +207,68 @@ Partition 1: \[2022, 2024, ...\]
 | Shuffle | 없음 | Exchange |
 
 <!-- empty-paragraph -->
+
+# 주의해야 할 Shuffle을 발생시키는 경우
+
+### 1\. DISTINCT
+
+```sql
+SELECT DISTINCT year FROM quarterly_sales
+```
+
+내부적으로 GROUP BY로 처리하므로 셔플 발생
+
+<!-- empty-paragraph -->
+
+### 2\. UNION (ALL 없는 경우)
+
+```sql
+SELECT year FROM t1
+UNION
+SELECT year FROM t2
+```
+
+중복 제거를 위한 그룹핑하므로 셔플 발생. 단, UNION ALL은 단순 병합이라 셔플 없음
+
+<!-- empty-paragraph -->
+
+### 3\. 스칼라 서브쿼리
+
+```sql
+SELECT year, (SELECT MAX(q1) FROM quarterly_sales) AS max_q1
+FROM quarterly_sales
+```
+
+서브쿼리 내부 집계로 인해 셔플 발생
+
+<!-- empty-paragraph -->
+
+### 4\. IN / EXISTS 서브쿼리
+
+```sql
+SELECT * FROM t
+WHERE year IN (SELECT year FROM other_table)
+```
+
+내부적으로 Semi Join으로 처리하기 때문에 셔플 발생. 단, 작은 테이블이면 Broadcast Join으로 최적화되어 셔플 생략 가능하다.
+
+<!-- empty-paragraph -->
+
+### 5\. UDAF (사용자 정의 집계 함수)
+
+```sql
+SELECT myUDAF(q1) FROM quarterly_sales
+```
+
+집계 함수이므로 셔플 발생
+
+<!-- empty-paragraph -->
+
+### 6\. DISTRIBUTE BY / CLUSTER BY
+
+```sql
+SELECT year, q1 FROM quarterly_sales
+DISTRIBUTE BY year
+```
+
+명시적 재파티셔닝이므로 셔플 발생
