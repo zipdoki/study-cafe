@@ -90,7 +90,7 @@ function sortTree(items) {
   return items
     .sort((a, b) => {
       if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
-      return a.name.localeCompare(b.name);
+      return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
     })
     .map(item => item.type === 'dir' ? { ...item, children: sortTree(item.children) } : item);
 }

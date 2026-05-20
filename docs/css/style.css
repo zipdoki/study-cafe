@@ -781,6 +781,24 @@ html, body {
   text-overflow: ellipsis;
 }
 .toc-item:hover { text-decoration: underline; }
+
+.heading-anchor {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  opacity: 0;
+  color: #aaa;
+  text-decoration: none;
+  vertical-align: middle;
+  transition: opacity 0.15s;
+}
+.ProseMirror h1:hover .heading-anchor,
+.ProseMirror h2:hover .heading-anchor,
+.ProseMirror h3:hover .heading-anchor,
+.ProseMirror h4:hover .heading-anchor,
+.ProseMirror h5:hover .heading-anchor,
+.ProseMirror h6:hover .heading-anchor { opacity: 1; }
+.heading-anchor:hover { color: var(--accent); }
 .toc-h1 { font-weight: 800; }
 .toc-h2 { font-weight: 800; }
 .toc-empty { padding: 8px 16px; font-size: 13px; font-style: italic; }
@@ -829,7 +847,7 @@ html, body {
 .mermaid-error { color: #e03e3e; font-size: 12px; font-family: monospace; white-space: pre-wrap; }
 
 /* ── Table ── */
-.tableWrapper { overflow-x: auto; margin: 0.8em 0; }
+.tableWrapper { overflow-x: auto; margin: 0.8em 0; padding-bottom: 2em; }
 
 .ProseMirror table {
   border-collapse: collapse;

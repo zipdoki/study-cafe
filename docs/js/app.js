@@ -1,4 +1,4 @@
-import { initEditor, setContent, getMarkdown, focusEditor } from './editor.js';
+import { initEditor, setContent, getMarkdown, focusEditor, setCurrentFilePath } from './editor.js';
 import { renderFileTree, showInlineCreate, showInlineFolderCreate } from './fileTree.js';
 import { ICON } from './icons.js';
 import { showConfirm, showAlert, showTokenInput } from './modal.js';
@@ -24,6 +24,14 @@ const pathDisplay     = $('file-path-display');
 const pathInput       = $('file-path-input');
 const statusText      = $('status-text');
 const btnSave         = $('btn-save');
+const btnGithubFile   = document.createElement('a');
+btnGithubFile.className = 'btn-theme';
+btnGithubFile.target    = '_blank';
+btnGithubFile.rel       = 'noopener noreferrer';
+btnGithubFile.title     = 'GitHub에서 열기';
+btnGithubFile.innerHTML = ICON.externalLink;
+btnGithubFile.style.display = 'none';
+$('toolbar-actions').insertBefore(btnGithubFile, btnSave);
 const btnNew          = $('btn-new-file');
 btnNew.innerHTML      = ICON.plus;
 const btnNewFolder    = $('btn-new-folder');
@@ -145,6 +153,9 @@ async function openFile(filePath) {
   state.currentFile = filePath;
   state.activeDir = null;
   state.isDirty = false;
+  setCurrentFilePath(filePath);
+  btnGithubFile.href = `https://github.com/zipdoki/study-cafe/blob/pages/${filePath}`;
+  btnGithubFile.style.display = '';
 
   setContent(content.replace(/\(\/images\//g, `(${RAW_BASE}/images/`));
 

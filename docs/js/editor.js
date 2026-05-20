@@ -6,11 +6,25 @@ import Image from 'https://esm.sh/@tiptap/extension-image@2';
 import CodeBlockLowlight from 'https://esm.sh/@tiptap/extension-code-block-lowlight@2';
 import { lowlight } from 'https://esm.sh/lowlight@2';
 import { Plugin } from 'https://esm.sh/prosemirror-state@1';
+import { Decoration, DecorationSet } from 'https://esm.sh/prosemirror-view@1';
 import Table from 'https://esm.sh/@tiptap/extension-table@2';
 import TableRow from 'https://esm.sh/@tiptap/extension-table-row@2';
 import TableHeader from 'https://esm.sh/@tiptap/extension-table-header@2';
 import TableCell from 'https://esm.sh/@tiptap/extension-table-cell@2';
 import { TableUI } from './tableUI.js';
+
+const GITHUB_FILE_BASE = 'https://github.com/zipdoki/study-cafe/blob/pages';
+
+let _currentFilePath = null;
+
+export function setCurrentFilePath(path) {
+  _currentFilePath = path;
+  if (editor) editor.view.dispatch(editor.state.tr);
+}
+
+function headingAnchor(text) {
+  return text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w가-힣ㄱ-㆏-]/g, '');
+}
 
 const LANGUAGES = [
   { value: '',           label: '언어 없음' },
@@ -225,6 +239,56 @@ const TextReplacements = Extension.create({
         },
       }),
     ];
+  },
+  addKeyboardShortcuts() {
+    return {
+      ' ': () => {
+        const { $from, empty } = this.editor.state.selection;
+        if (!empty || $from.parent.type.name !== 'paragraph') return false;
+        const textBefore = $from.parent.textContent.slice(0, $from.parentOffset);
+        if (!/^[ ]*$/.test(textBefore)) return false;
+        this.editor.commands.insertContent(' ');
+        return true;
+      },
+    };
+  },
+});
+
+const LINK_SVG = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.775 3.275a.75.75 0 0 0 1.06 1.06l1.25-1.25a2 2 0 1 1 2.83 2.83l-2.5 2.5a2 2 0 0 1-2.83 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l2.5-2.5a3.5 3.5 0 0 0-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 0 1 0-2.83l2.5-2.5a2 2 0 0 1 2.83 0 .75.75 0 0 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-2.5 2.5a3.5 3.5 0 0 0 4.95 4.95l1.25-1.25a.75.75 0 0 0-1.06-1.06l-1.25 1.25a2 2 0 0 1-2.83 0z"/></svg>';
+
+const HeadingLinks = Extension.create({
+  name: 'headingLinks',
+  addProseMirrorPlugins() {
+    return [new Plugin({
+      props: {
+        decorations(state) {
+          const decos = [];
+          state.doc.forEach((node, offset) => {
+            if (node.type.name !== 'heading') return;
+            const anchor = headingAnchor(node.textContent);
+            const href = _currentFilePath
+              ? `${GITHUB_FILE_BASE}/${_currentFilePath}#${anchor}`
+              : '#';
+            decos.push(Decoration.widget(
+              offset + node.nodeSize - 1,
+              () => {
+                const a = document.createElement('a');
+                a.className = 'heading-anchor';
+                a.href = href;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                a.contentEditable = 'false';
+                a.innerHTML = LINK_SVG;
+                a.addEventListener('mousedown', e => e.stopPropagation());
+                return a;
+              },
+              { side: 1, key: `heading-link-${anchor}` }
+            ));
+          });
+          return DecorationSet.create(state.doc, decos);
+        },
+      },
+    })];
   },
 });
 
@@ -715,6 +779,7 @@ export function initEditor(onUpdate, onSelectionUpdate, onImageUpload, onSave) {
       StarterKit.configure({ codeBlock: false }),
       SaveShortcut,
       TextReplacements,
+      HeadingLinks,
       CodeBlockWithLang,
       MermaidBlock,
       TocBlock,
