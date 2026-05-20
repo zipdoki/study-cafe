@@ -586,4 +586,6 @@ Partition 1: 데이터 1건 ─┘→ Partition 0: 100만 1건
 
 <!-- empty-paragraph -->
 
+## 7강 하나의 테이블에 대한 조작
+
 <!-- empty-paragraph -->
