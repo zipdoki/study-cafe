@@ -310,13 +310,14 @@ html, body {
 }
 
 .ProseMirror code {
-  background: rgba(135, 131, 120, 0.15);
-  border-radius: 3px;
+  background: rgb(215 215 215 / 15%);
+  border: 1px solid rgba(135, 131, 120, 0.35);
+  border-radius: 6px;
   padding: 0.1em 0.35em;
   font-size: 0.88em;
   font-family: 'SFMono-Regular', 'Fira Code', Consolas, monospace;
+  color: #EB5757;
 }
-
 /* Plain pre (not wrapped in NodeView) */
 .ProseMirror pre {
   background: #f6f8fa;
@@ -327,7 +328,7 @@ html, body {
   overflow-x: auto;
   margin: 0.8em 0;
 }
-.ProseMirror pre code { background: none; color: inherit; padding: 0; font-size: 0.85em; }
+.ProseMirror pre code { background: none; border: none; color: inherit; padding: 0; font-size: 0.85em; }
 
 /* ── Code block NodeView ── */
 .code-block-wrapper { margin: 0.8em 0; }
