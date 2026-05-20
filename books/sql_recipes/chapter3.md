@@ -66,16 +66,15 @@ object Test extends SparkTestBase {
 }
 ```
 
+Parsed Logical Plan (파싱 단계)
+
 ```
 == Parsed Logical Plan ==
 'Project ['user_id, CASE WHEN ('register_device = 1) THEN 데스크톱 WHEN ('register_device = 2) THEN 스마트폰 WHEN ('register_device = 3) THEN 애플리케이션 END AS device_name#11]
 +- 'UnresolvedRelation [mst_users], [], false
 ```
 
-Parsed Logical Plan (파싱 단계)
-
--   `'UnresolvedRelation [mst_users]` SQL 문자열을 AST로 변환한 단계. ' 접두어(e.g. `'user_id`, `'register_device`)는 아직 이름만 알고 실제 컬럼인지는 모르는 상태이다. `mst_users`도 실제 테이블인지 검증 전이다.
-    
+`'UnresolvedRelation [mst_users]` SQL 문자열을 AST로 변환한 단계. ' 접두어(e.g. `'user_id`, `'register_device`)는 아직 이름만 알고 실제 컬럼인지는 모르는 상태이다. `mst_users`도 실제 테이블인지 검증 전이다.
 
 ```
 == Analyzed Logical Plan ==
