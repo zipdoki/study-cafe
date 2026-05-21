@@ -5,18 +5,40 @@
     "type": "dir",
     "children": [
       {
+        "name": "spark_the_definitive_guide",
+        "path": "books/spark_the_definitive_guide",
+        "type": "dir",
+        "children": [
+          {
+            "name": "REAMDE.md",
+            "path": "books/spark_the_definitive_guide/REAMDE.md",
+            "type": "file"
+          }
+        ]
+      },
+      {
         "name": "sql_recipes",
         "path": "books/sql_recipes",
         "type": "dir",
         "children": [
           {
-            "name": "chapter1.md",
-            "path": "books/sql_recipes/chapter1.md",
+            "name": "README.md",
+            "path": "books/sql_recipes/README.md",
             "type": "file"
           },
           {
             "name": "chapter2.md",
             "path": "books/sql_recipes/chapter2.md",
+            "type": "file"
+          },
+          {
+            "name": "chapter3.md",
+            "path": "books/sql_recipes/chapter3.md",
+            "type": "file"
+          },
+          {
+            "name": "chapter3_research.md",
+            "path": "books/sql_recipes/chapter3_research.md",
             "type": "file"
           },
           {
@@ -29,8 +51,15 @@
     ]
   },
   {
-    "name": "README.md",
-    "path": "README.md",
-    "type": "file"
+    "name": "others",
+    "path": "others",
+    "type": "dir",
+    "children": [
+      {
+        "name": "01_map_reduce.md",
+        "path": "others/01_map_reduce.md",
+        "type": "file"
+      }
+    ]
   }
 ]
