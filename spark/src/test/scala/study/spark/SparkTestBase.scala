@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 object SparkTestSession {
   lazy val spark: SparkSession = SparkSession.builder()
     .appName("spark-test")
-    .master("local[2]")
+    .master("local[*]")
     .config("spark.sql.shuffle.partitions", "1")
     .config("spark.ui.enabled", "false")
     .getOrCreate()
