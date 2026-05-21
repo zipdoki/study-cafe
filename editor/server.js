@@ -42,6 +42,12 @@ app.get('/api/file/*', (req, res) => {
 
 app.use('/images', express.static(path.join(CONTENT_DIR, 'images')));
 const DOCS_DIR = path.join(__dirname, '..', 'docs');
+const EDITS_HTML = path.join(DOCS_DIR, 'edits', 'index.html');
+
+app.get([`${BASE}/edits`, `${BASE}/edits/*`], (req, res) => {
+  res.sendFile(EDITS_HTML);
+});
+
 app.use(BASE, express.static(DOCS_DIR));
 
 app.get(`${BASE}/*`, (req, res) => {

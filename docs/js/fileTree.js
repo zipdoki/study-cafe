@@ -9,22 +9,22 @@ function itemPadding(depth) {
   return `${BASE_INDENT + depth * INDENT_STEP}px`;
 }
 
-export function renderFileTree(items, container, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath) {
+export function renderFileTree(items, container, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath, readOnly = false) {
   container.innerHTML = '';
-  setupDropTarget(container, '', onMove, 'drag-over-root');
+  if (!readOnly) setupDropTarget(container, '', onMove, 'drag-over-root');
 
   if (!items || items.length === 0) {
     const empty = document.createElement('div');
     empty.style.cssText = 'padding:12px 16px;font-size:13px;color:#aaa;';
-    empty.textContent = '+ 버튼으로 파일을 만드세요';
+    empty.textContent = readOnly ? '파일이 없습니다' : '+ 버튼으로 파일을 만드세요';
     container.appendChild(empty);
     return;
   }
 
-  renderItems(items, container, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath, 0);
+  renderItems(items, container, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath, 0, readOnly);
 }
 
-function renderItems(items, container, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath, depth) {
+function renderItems(items, container, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath, depth, readOnly) {
   for (const item of items) {
     if (item.type === 'dir') {
       const block = document.createElement('div');
@@ -32,24 +32,24 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
 
       const children = document.createElement('div');
       children.className = 'tree-children';
-      renderItems(item.children, children, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath, depth + 1);
+      renderItems(item.children, children, onFileClick, activeFile, onMove, onDelete, onCreate, onRename, activeDirPath, depth + 1, readOnly);
 
       const header = document.createElement('div');
       header.className = `tree-item dir${item.path === activeDirPath ? ' active' : ''}`;
       header.dataset.dirPath = item.path;
-      header.draggable = !('ontouchstart' in window);
+      header.draggable = !readOnly && !('ontouchstart' in window);
       header.style.paddingLeft = itemPadding(depth);
-      header.innerHTML = `${ICON.chevronDown}${ICON.folder}<span class="tree-label">${esc(item.name)}</span><button class="tree-add-btn" title="이 폴더에 파일 추가">+</button>`;
-      setupDropTarget(header, item.path, onMove);
+      header.innerHTML = `${ICON.chevronDown}${ICON.folder}<span class="tree-label">${esc(item.name)}</span>${readOnly ? '' : '<button class="tree-add-btn" title="이 폴더에 파일 추가">+</button>'}`;
+      if (!readOnly) setupDropTarget(header, item.path, onMove);
 
-      header.addEventListener('dragstart', (e) => {
+      if (!readOnly) header.addEventListener('dragstart', (e) => {
         dragSrc = item.path;
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', item.path);
         requestAnimationFrame(() => header.classList.add('dragging'));
       });
 
-      header.addEventListener('dragend', () => {
+      if (!readOnly) header.addEventListener('dragend', () => {
         dragSrc = null;
         header.classList.remove('dragging');
         document.querySelectorAll('.drag-over, .drag-over-root')
@@ -70,12 +70,12 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
         if (e.target.closest('.tree-add-btn')) return;
       });
 
-      header.querySelector('.tree-label').addEventListener('dblclick', (e) => {
+      if (!readOnly) header.querySelector('.tree-label').addEventListener('dblclick', (e) => {
         e.stopPropagation();
         startRename(e.target, item.name, (newName) => onRename(item.path, newName, 'dir'));
       });
 
-      header.querySelector('.tree-add-btn').addEventListener('click', (e) => {
+      if (!readOnly) header.querySelector('.tree-add-btn').addEventListener('click', (e) => {
         e.stopPropagation();
         if (collapsed) {
           collapsed = false;
@@ -95,9 +95,9 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
       const el = document.createElement('div');
       el.className = `tree-item file${item.path === activeFile ? ' active' : ''}`;
       el.dataset.path = item.path;
-      el.draggable = !('ontouchstart' in window);
+      el.draggable = !readOnly && !('ontouchstart' in window);
       el.style.paddingLeft = itemPadding(depth);
-      el.innerHTML = `${ICON.file}<span class="tree-label">${esc(item.name)}</span><button class="tree-delete-btn" title="삭제">×</button>`;
+      el.innerHTML = `${ICON.file}<span class="tree-label">${esc(item.name)}</span>${readOnly ? '' : '<button class="tree-delete-btn" title="삭제">×</button>'}`;
 
       let clickTimer = null;
 
@@ -112,26 +112,26 @@ function renderItems(items, container, onFileClick, activeFile, onMove, onDelete
         onFileClick(item.path);
       }, { passive: false });
 
-      el.querySelector('.tree-label').addEventListener('dblclick', (e) => {
+      if (!readOnly) el.querySelector('.tree-label').addEventListener('dblclick', (e) => {
         e.stopPropagation();
         clearTimeout(clickTimer);
         clickTimer = null;
         startRename(e.target, item.name, (newName) => onRename(item.path, newName, 'file'));
       });
 
-      el.querySelector('.tree-delete-btn').addEventListener('click', (e) => {
+      if (!readOnly) el.querySelector('.tree-delete-btn').addEventListener('click', (e) => {
         e.stopPropagation();
         onDelete(item.path);
       });
 
-      el.addEventListener('dragstart', (e) => {
+      if (!readOnly) el.addEventListener('dragstart', (e) => {
         dragSrc = item.path;
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', item.path);
         requestAnimationFrame(() => el.classList.add('dragging'));
       });
 
-      el.addEventListener('dragend', () => {
+      if (!readOnly) el.addEventListener('dragend', () => {
         dragSrc = null;
         el.classList.remove('dragging');
         document.querySelectorAll('.drag-over, .drag-over-root')

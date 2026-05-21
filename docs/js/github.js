@@ -45,7 +45,7 @@ function b64encode(str) {
   return btoa(bin);
 }
 
-function buildTree(items) {
+export function buildTree(items) {
   const map = {};
   const root = [];
   const neededDirs = new Set();

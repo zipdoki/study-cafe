@@ -117,6 +117,11 @@ async function refreshTree() {
   }
 }
 
+function saveTreeSnapshot() {
+  withToken(token => ghSave('_tree.json', JSON.stringify(fileTreeData), token))
+    .catch(e => console.warn('tree snapshot failed:', e.message));
+}
+
 function collectFilePaths(items) {
   const paths = [];
   for (const item of items) {
@@ -231,6 +236,7 @@ async function doCreateFile(raw) {
   try {
     await withToken((token) => ghCreate(filePath, token));
     await refreshTree();
+    saveTreeSnapshot();
     await openFile(filePath);
   } catch (e) {
     if (e.message !== 'cancelled') setStatus(`파일 생성 실패: ${e.message}`, 'error');
@@ -244,6 +250,7 @@ async function doCreateDir(name) {
     await withToken((token) => ghCreateDir(name, token));
     setStatus('폴더 생성됨');
     await refreshTree();
+    saveTreeSnapshot();
   } catch (e) {
     if (e.message !== 'cancelled') setStatus(`폴더 생성 실패: ${e.message}`, 'error');
   }
@@ -267,6 +274,7 @@ async function deleteFile(filePath) {
       setStatus('');
     }
     await refreshTree();
+    saveTreeSnapshot();
   } catch (e) {
     if (e.message !== 'cancelled') await showAlert(`삭제 실패: ${e.message}`, '오류');
   }
@@ -306,6 +314,7 @@ async function renameItem(oldPath, newName, type) {
     }
     setStatus('이름 변경됨');
     await refreshTree();
+    saveTreeSnapshot();
   } catch (e) {
     if (e.message !== 'cancelled') {
       await showAlert(`이름 변경 실패: ${e.message}`, '오류');
@@ -345,6 +354,7 @@ async function moveItem(oldPath, newPath, type = 'file') {
     }
     setStatus('이동됨');
     await refreshTree();
+    saveTreeSnapshot();
   } catch (e) {
     if (e.message !== 'cancelled') setStatus(`이동 실패: ${e.message}`, 'error');
   }
