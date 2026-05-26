@@ -1,3 +1,5 @@
+<!-- toc -->
+
 # Spark에서 AVG를 처리하는 방법
 
 AVG 자체는 monoid가 아니기 때문에 분산 처리가 불가하다. 따라서 Spark에서는 AVG를 monoid인 형태로 변환해 처리한다.
