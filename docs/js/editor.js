@@ -249,6 +249,26 @@ const TextReplacements = Extension.create({
       }),
     ];
   },
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        props: {
+          handleTextInput(view, from, to, text) {
+            const { state } = view;
+            const $from = state.doc.resolve(from);
+            if ($from.parent.type.name !== 'codeBlock') return false;
+            if (text !== '>') return false;
+            const parentOffset = $from.parentOffset;
+            if (parentOffset < 2) return false;
+            const textBefore = $from.parent.textContent.slice(parentOffset - 2, parentOffset);
+            if (textBefore !== '--') return false;
+            view.dispatch(state.tr.replaceWith(from - 2, to, state.schema.text('→')));
+            return true;
+          },
+        },
+      }),
+    ];
+  },
   addKeyboardShortcuts() {
     return {
       ' ': () => {
