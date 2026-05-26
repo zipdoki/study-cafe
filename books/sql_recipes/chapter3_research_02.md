@@ -151,3 +151,51 @@ AdaptiveSparkPlan isFinalPlan=false
 > f([1,2,3,4])        = (10, 4)
 > f([1,2]) ⊕ f([3,4]) = (3,2) ⊕ (7,2) = (10, 4)
 > ```
+
+<!-- empty-paragraph -->
+
+일반 집계함수들은 Monoid 준동형(Homomorphism)이 성립한다.
+
+```
+SUM:   f(A ∪ B) = f(A) + f(B)       ✓ 분산 가능
+COUNT: f(A ∪ B) = f(A) + f(B)       ✓ 분산 가능
+MAX:   f(A ∪ B) = max(f(A), f(B))   ✓ 분산 가능
+```
+
+<!-- empty-paragraph -->
+
+하지만 COUNT(DISTINCT)는 부분 결과를 합칠 수가 없기 때문에 Monoid 준동형이 성립하지 않는다.
+
+```
+파티션1: {A, A, B}  → distinct count = 2
+파티션2: {A, C}     → distinct count = 2
+
+단순 합산: 2 + 2 = 4  ❌ (실제 정답은 3: A, B, C)
+```
+
+<!-- empty-paragraph -->
+
+## Spark가 COUNT(DISTINCT)를 해결한 방법
+
+(user\_id, product\_id)로 재파티셔닝하여 같은 product\_id는 반드시 같은 노드로 보낸다.
+
+<!-- empty-paragraph -->
+
+(user\_id, product\_id)로 Shuffle 한다.
+
+```
+노드1: {(u1, A), (u1, A), (u1, A)}  → product_id A의 모든 레코드
+노드2: {(u1, B), (u1, B)}           → product_id B의 모든 레코드
+노드3: {(u1, C)}                    → product_id C의 모든 레코드
+```
+
+<!-- empty-paragraph -->
+
+이제 각 노드에서 (user\_id, product\_id) 조합은 전 세계에서 하나의 노드에만 존재한다.
+
+```
+f(파티션1) + f(파티션2) + f(파티션3) = 1 + 1 + 1 = 3  ✓ 
+→ COUNT가 다시 Monoid가 된다.
+```
+
+<!-- empty-paragraph -->
