@@ -678,10 +678,8 @@ AdaptiveSparkPlan isFinalPlan=false
     
     -   gid=0: user\_id, product\_id를 null로 → COUNT(1), SUM, AVG, MAX, MIN용
         
-    
     -   gid=1: user\_id 유지, product\_id=null → COUNT(DISTINCT user\_id)용
         
-    
     -   gid=2: product\_id 유지, user\_id=null → COUNT(DISTINCT product\_id)용
         
 2.  Partial HashAggregate: 각 파티션에서 (user\_id, product\_id, gid) 키로 로컬 집계
@@ -696,3 +694,5 @@ AdaptiveSparkPlan isFinalPlan=false
 → 핵심: COUNT(DISTINCT col)이 하나라면 Spark가 더 단순한 방식으로 처리할 수 있지만, 서로 다른 컬럼에 대한 DISTINCT가 2개 이상 있으면 Expand 전략이 강제되고 셔플이 필수가 된다. 각 DISTINCT 값이 동일한 리듀서에 모여야 정확한 카운트가 보장되기 때문이다.
 
 <!-- empty-paragraph -->
+
+#### 집약 함수를 적용한 값과 집약 전의 값을 동시에 다루기
