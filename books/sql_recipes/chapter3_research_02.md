@@ -199,3 +199,13 @@ f(파티션1) + f(파티션2) + f(파티션3) = 1 + 1 + 1 = 3  ✓
 ```
 
 <!-- empty-paragraph -->
+
+수학적으로 표현하면 다음과 같다.
+
+| ​ | COUNT(DISTINCT) 직접 | Spark의 방식 |
+| --- | --- | --- |
+| 중간 표현 | distinct 개수 (스칼라) | (user_id, product_id) 그룹 (집합) |
+| 결합 연산 | + (불가) | 집합 Union → COUNT (가능) |
+| Monoid | X | O |
+
+<!-- empty-paragraph -->
