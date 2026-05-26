@@ -82,11 +82,50 @@ object Test extends SparkTestBase {
     x.distinct()
 
     spark.sql(
-      """SELECT  SUM(score) AS sum
+      """SELECT  AVG(score) AS sum
          FROM  review"""
     ).explain(true)
   }
 }
+```
+
+<!-- empty-paragraph -->
+
+```
+== Parsed Logical Plan ==
+'Project ['AVG('score) AS sum#16]
++- 'UnresolvedRelation [review], [], false
+
+== Analyzed Logical Plan ==
+sum: double
+Aggregate [avg(score#15) AS sum#16]
++- SubqueryAlias review
+   +- View (`review`, [user_id#13, product_id#14, score#15])
+      +- Project [_1#3 AS user_id#13, _2#4 AS product_id#14, _3#5 AS score#15]
+         +- LocalRelation [_1#3, _2#4, _3#5]
+
+== Optimized Logical Plan ==
+Aggregate [avg(score#15) AS sum#16]
++- LocalRelation [score#15]
+
+== Physical Plan ==
+AdaptiveSparkPlan isFinalPlan=false
++- HashAggregate(keys=[], functions=[avg(score#15)], output=[sum#16])
+   +- Exchange SinglePartition, ENSURE_REQUIREMENTS, [plan_id=14]
+      +- HashAggregate(keys=[], functions=[partial_avg(score#15)], output=[sum#20, count#21L])
+         +- LocalTableScan [score#15]
+```
+
+<!-- empty-paragraph -->
+
+```
+LocalTableScan                     ← 데이터 읽기
+↓
+HashAggregate (partial_sum)        ← 서버별로 먼저 더하기
+↓
+Exchange SinglePartition           ← 결과 한 곳으로 모으기
+↓
+HashAggregate (sum)                ← 최종 합산
 ```
 
 <!-- empty-paragraph -->
