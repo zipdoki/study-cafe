@@ -825,4 +825,16 @@ COUNT(DISTINCT product_id per user_id)
 
 #### 집약 함수를 적용한 값과 집약 전의 값을 동시에 다루기
 
+```sql
+SELECT 1=1
+     , user_id
+     , product_id
+     , score
+     , AVG(score) OVER() AS avg_score
+     , AVG(score) OVER(PARTITION BY user_id) AS user_avg_score
+     , score - AVG(score) OVER(PARTITION BY user_id) AS user_avg_score_diff
+FROM   review
+;
+```
+
 <!-- empty-paragraph -->
