@@ -842,3 +842,79 @@ FROM   review
 ```
 
 <!-- empty-paragraph -->
+
+```scala
+package study.spark
+
+object Test extends SparkTestBase {
+  def main(args: Array[String]): Unit = {
+    import spark.implicits._
+
+    Seq(
+      ("U001", "A001", 4.0),
+      ("U001", "A002", 5.0),
+      ("U001", "A003", 5.0),
+      ("U002", "A001", 3.0),
+      ("U002", "A002", 3.0),
+      ("U002", "A003", 4.0),
+      ("U003", "A001", 5.0),
+      ("U003", "A002", 4.0),
+      ("U003", "A003", 4.0),
+    ).toDF("user_id", "product_id", "score")
+      .createOrReplaceTempView("review")
+
+    spark.sql(
+      """SELECT 1=1
+              , user_id
+              , product_id
+              -- 개별 리뷰 점수
+              , score
+              -- 전체 평균 리뷰 점수
+              , AVG(score) OVER() AS avg_score
+              -- 사용자의 평균 리뷰 점수
+              , AVG(score) OVER(PARTITION BY user_id) AS user_avg_score
+              -- 개별 리뷰 점수와 사용자 평균 리뷰 점수의 차이
+              , score - AVG(score) OVER(PARTITION BY user_id) AS user_avg_score_diff
+         FROM   review
+         ;"""
+    ).explain(true)
+  }
+}
+```
+
+<!-- empty-paragraph -->
+
+```
+== Parsed Logical Plan ==
+'Project [unresolvedalias((1 = 1)), 'user_id, 'product_id, 'score, 'AVG('score) windowspecdefinition(unspecifiedframe$()) AS avg_score#16, 'AVG('score) windowspecdefinition('user_id, unspecifiedframe$()) AS user_avg_score#17, ('score - 'AVG('score) windowspecdefinition('user_id, unspecifiedframe$())) AS user_avg_score_diff#18]
++- 'UnresolvedRelation [review], [], false
+
+== Analyzed Logical Plan ==
+(1 = 1): boolean, user_id: string, product_id: string, score: double, avg_score: double, user_avg_score: double, user_avg_score_diff: double
+Project [(1 = 1)#22, user_id#13, product_id#14, score#15, avg_score#16, user_avg_score#17, user_avg_score_diff#18]
++- Project [(1 = 1)#22, user_id#13, product_id#14, score#15, avg_score#16, user_avg_score#17, _we2#23, avg_score#16, user_avg_score#17, (score#15 - _we2#23) AS user_avg_score_diff#18]
+   +- Window [avg(score#15) windowspecdefinition(user_id#13, specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS user_avg_score#17, avg(score#15) windowspecdefinition(user_id#13, specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS _we2#23], [user_id#13]
+      +- Window [avg(score#15) windowspecdefinition(specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS avg_score#16]
+         +- Project [(1 = 1) AS (1 = 1)#22, user_id#13, product_id#14, score#15]
+            +- SubqueryAlias review
+               +- View (`review`, [user_id#13, product_id#14, score#15])
+                  +- Project [_1#3 AS user_id#13, _2#4 AS product_id#14, _3#5 AS score#15]
+                     +- LocalRelation [_1#3, _2#4, _3#5]
+
+== Optimized Logical Plan ==
+Project [(1 = 1)#22, user_id#13, product_id#14, score#15, avg_score#16, user_avg_score#17, (score#15 - _we2#23) AS user_avg_score_diff#18]
++- Window [avg(score#15) windowspecdefinition(user_id#13, specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS user_avg_score#17, avg(score#15) windowspecdefinition(user_id#13, specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS _we2#23], [user_id#13]
+   +- Window [avg(score#15) windowspecdefinition(specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS avg_score#16]
+      +- LocalRelation [(1 = 1)#22, user_id#13, product_id#14, score#15]
+
+== Physical Plan ==
+AdaptiveSparkPlan isFinalPlan=false
++- Project [(1 = 1)#22, user_id#13, product_id#14, score#15, avg_score#16, user_avg_score#17, (score#15 - _we2#23) AS user_avg_score_diff#18]
+   +- Window [avg(score#15) windowspecdefinition(user_id#13, specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS user_avg_score#17, avg(score#15) windowspecdefinition(user_id#13, specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS _we2#23], [user_id#13]
+      +- Sort [user_id#13 ASC NULLS FIRST], false, 0
+         +- Window [avg(score#15) windowspecdefinition(specifiedwindowframe(RowFrame, unboundedpreceding$(), unboundedfollowing$())) AS avg_score#16]
+            +- Exchange SinglePartition, ENSURE_REQUIREMENTS, [plan_id=19]
+               +- LocalTableScan [(1 = 1)#22, user_id#13, product_id#14, score#15]
+```
+
+<!-- empty-paragraph -->
