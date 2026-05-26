@@ -829,9 +829,13 @@ COUNT(DISTINCT product_id per user_id)
 SELECT 1=1
      , user_id
      , product_id
+     -- 개별 리뷰 점수
      , score
+     -- 전체 평균 리뷰 점수
      , AVG(score) OVER() AS avg_score
+     -- 사용자의 평균 리뷰 점수
      , AVG(score) OVER(PARTITION BY user_id) AS user_avg_score
+     -- 개별 리뷰 점수와 사용자 평균 리뷰 점수의 차이
      , score - AVG(score) OVER(PARTITION BY user_id) AS user_avg_score_diff
 FROM   review
 ;
