@@ -205,7 +205,7 @@ html, body {
 .status.warn { color: #d97706; }
 
 #btn-save {
-  background: var(--accent);
+  background: #2383E2FF;
   color: #fff;
   border: none;
   border-radius: 4px;
