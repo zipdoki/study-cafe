@@ -317,6 +317,9 @@ async function moveItem(oldPath, newPath, type = 'file') {
   const srcEl = fileTreeEl.querySelector(`[data-path="${oldPath}"], [data-dir-path="${oldPath}"]`);
   if (srcEl) srcEl.classList.add('moving');
   try {
+    let movedCurrentFile = null;
+    let movedActiveDir   = null;
+
     if (type === 'dir') {
       const allPaths = getKnownPaths(oldPath);
       await withToken(async (token) => {
@@ -326,23 +329,27 @@ async function moveItem(oldPath, newPath, type = 'file') {
         }
       });
       if (state.currentFile?.startsWith(oldPath + '/')) {
-        state.currentFile = newPath + state.currentFile.slice(oldPath.length);
-        pathDisplay.textContent = state.currentFile;
+        movedCurrentFile = newPath + state.currentFile.slice(oldPath.length);
       }
       if (state.activeDir === oldPath || state.activeDir?.startsWith(oldPath + '/')) {
-        state.activeDir = newPath + (state.activeDir.slice(oldPath.length) || '');
+        movedActiveDir = newPath + (state.activeDir.slice(oldPath.length) || '');
       }
     } else {
       await withToken((token) => ghRename(oldPath, newPath, token));
       if (state.currentFile === oldPath) {
-        state.currentFile = newPath;
-        pathDisplay.textContent = state.currentFile;
+        movedCurrentFile = newPath;
       }
     }
     setStatus('이동됨');
     localRenameNode(oldPath, newPath);
     rerender();
     saveTreeSnapshot();
+
+    if (movedCurrentFile) {
+      await openFile(movedCurrentFile);
+    } else if (movedActiveDir !== null) {
+      openDir(movedActiveDir);
+    }
   } catch (e) {
     if (e.message !== 'cancelled') setStatus(`이동 실패: ${e.message}`, 'error');
   }
