@@ -117,4 +117,12 @@ AdaptiveSparkPlan isFinalPlan=false
 
 <!-- empty-paragraph -->
 
-`HashAggregate (partial_avg) → output=[sum#20, count#21L]` monoid 형태로 변환하는 부분
+`HashAggregate (partial_avg) → output=[sum#20, count#21L]` 이 monoid 형태로 변환하는 부분이다.
+
+<!-- empty-paragraph -->
+
+# DISTINCT를 monoid 관점에서 분석하기
+
+## 왜 COUNT(DISTINCT)는 기본적으로 Monoid가 아닌가?
+
+일반 집계함수들은 Monoid 준동형(Homomorphism) 이 성립한다.
