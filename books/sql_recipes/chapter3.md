@@ -780,4 +780,6 @@ AdaptiveSparkPlan isFinalPlan=false
                   +- LocalTableScan [user_id#13, product_id#14, score#15]
 ```
 
+<!-- empty-paragraph -->
+
 #### 집약 함수를 적용한 값과 집약 전의 값을 동시에 다루기
