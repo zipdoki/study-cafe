@@ -815,7 +815,10 @@ COUNT(DISTINCT product_id per user_id)
 
 ```
 1st Exchange (user_id, product_id)
-└─ COUNT(DISTINCT)를 Monoid로 만들기 위한 재파티셔닝
+   └─ COUNT(DISTINCT)를 Monoid로 만들기 위한 재파티셔닝
+
+2nd Exchange (user_id)
+   └─ user_id별 최종 집계를 위한 재파티셔닝
 ```
 
 #### 집약 함수를 적용한 값과 집약 전의 값을 동시에 다루기
