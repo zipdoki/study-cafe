@@ -854,6 +854,7 @@ html, body {
   width: 100%;
   border: 1px solid var(--border);
   table-layout: auto;
+  margin-bottom: 2.6rem;
 }
 .ProseMirror table th,
 .ProseMirror table td {
