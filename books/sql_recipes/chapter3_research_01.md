@@ -36,8 +36,6 @@ Spark Logical Plan의 노드들은 크게 Relation(데이터 소스), Structural
 | CTE (WithCTE) | WITH cte AS (...) 구문 |
 | UnresolvedRelation | 파싱 단계에서 아직 검증 안 된 테이블 참조 |
 
-<!-- empty-paragraph -->
-
 #### Operator: 데이터 변환
 
 | 노드 | 설명 |
@@ -56,8 +54,6 @@ Spark Logical Plan의 노드들은 크게 Relation(데이터 소스), Structural
 | Generate | explode(), posexplode() 등 행 생성 |
 | Repartition | .repartition() / .coalesce() |
 | GlobalLimit / LocalLimit | Analyzed 단계에서 LIMIT이 두 개로 분리됨 |
-
-<!-- empty-paragraph -->
 
 #### 예시: 쿼리와 플랜 매핑
 
@@ -103,8 +99,6 @@ Catalyst 옵티마이저가 Logical Plan을 Physical Plan으로 변환하면서 
 | JDBCRelation | JDBC 외부 DB 스캔 |
 | HiveTableScan | Hive 테이블 스캔 |
 
-<!-- empty-paragraph -->
-
 #### Aggregate: 집계
 
 | 노드 | 설명 |
@@ -124,8 +118,6 @@ Catalyst 옵티마이저가 Logical Plan을 Physical Plan으로 변환하면서 
 | BroadcastNestedLoopJoin | 중첩 루프 조인 (조건 없는 Cross Join 등) |
 | ShuffledHashJoin | Shuffle 후 해시 조인 |
 
-<!-- empty-paragraph -->
-
 #### Exchange: 데이터 이동 (Shuffle)
 
 | 노드 | 설명 |
@@ -134,8 +126,6 @@ Catalyst 옵티마이저가 Logical Plan을 Physical Plan으로 변환하면서 
 | BroadcastExchange | 브로드캐스트용 데이터 전송 |
 | ShuffleQueryStage | AQE(Adaptive Query Execution) 적용 시 Exchange 래퍼 |
 
-<!-- empty-paragraph -->
-
 #### Sort / Limit
 
 | 노드 | 설명 |
@@ -143,8 +133,6 @@ Catalyst 옵티마이저가 Logical Plan을 Physical Plan으로 변환하면서 
 | Sort | 정렬 ORDER BY |
 | TakeOrderedAndProject | ORDER BY ... LIMIT n 최적화 — 전체 정렬 없이 Top-N만 추출 |
 | CollectLimit | LIMIT n — 드라이버로 수집 |
-
-<!-- empty-paragraph -->
 
 분산 환경에서는 Sort가 반드시 셔플을 유발한다.
 
@@ -194,8 +182,6 @@ Partition 1: \[2022, 2024, ...\]
 | Generate | explode() 등 행 생성 |
 | WholeStageCodegen | 여러 연산을 하나의 JVM 코드로 묶어 실행 (성능 최적화) |
 
-<!-- empty-paragraph -->
-
 ## Logical와 Physical 비교
 
 | 개념 | Logical Plan | Physical Plan |
@@ -205,8 +191,6 @@ Partition 1: \[2022, 2024, ...\]
 | 집계 | Aggregate | HashAggregate, SortAggregate 등 |
 | 데이터 소스 | LocalRelation, LogicalRelation | LocalTableScan, FileScan 등 |
 | Shuffle | 없음 | Exchange |
-
-<!-- empty-paragraph -->
 
 # 주의해야 할 Shuffle을 발생시키는 경우
 
