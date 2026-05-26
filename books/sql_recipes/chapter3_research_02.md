@@ -118,14 +118,4 @@ AdaptiveSparkPlan isFinalPlan=false
 
 <!-- empty-paragraph -->
 
-```
-LocalTableScan                     ← 데이터 읽기
-↓
-HashAggregate (partial_sum)        ← 서버별로 먼저 더하기
-↓
-Exchange SinglePartition           ← 결과 한 곳으로 모으기
-↓
-HashAggregate (sum)                ← 최종 합산
-```
-
-<!-- empty-paragraph -->
+`HashAggregate (partial_avg) → output=[sum#20, count#21L]` monoid 형태로 변환하는 부분
