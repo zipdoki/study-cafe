@@ -194,12 +194,19 @@ export async function renameFile(oldPath, newPath, token) {
   if (!createRes.ok) throw new Error(createData.message || '이름 변경 실패');
   if (createData.content?.sha) shaCache[newPath] = createData.content.sha;
 
+  // PUT이 새 커밋을 만든 이후 SHA가 바뀔 수 있으므로 다시 조회
+  const shaRes = await fetch(`${BASE}/repos/${REPO}/contents/${encPath(oldPath)}?ref=${BRANCH}`, {
+    headers: ghHeaders(token),
+  });
+  const currentSha = shaRes.ok ? (await shaRes.json()).sha : old.sha;
+
   const delRes = await fetch(`${BASE}/repos/${REPO}/contents/${encPath(oldPath)}`, {
     method: 'DELETE',
     headers: { ...ghHeaders(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: `Remove ${oldPath} (renamed)`, sha: old.sha, branch: BRANCH }),
+    body: JSON.stringify({ message: `Remove ${oldPath} (renamed)`, sha: currentSha, branch: BRANCH }),
   });
-  if (!delRes.ok) throw new Error('이전 파일 삭제 실패');
+  const delData = await delRes.json().catch(() => ({}));
+  if (!delRes.ok) throw new Error(delData.message || '이전 파일 삭제 실패');
   delete shaCache[oldPath];
 }
 

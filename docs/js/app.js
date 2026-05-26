@@ -1,5 +1,5 @@
 import { initEditor, setContent, getMarkdown, focusEditor, setCurrentFilePath } from './editor.js';
-import { renderFileTree, showInlineCreate, showInlineFolderCreate } from './fileTree.js';
+import { renderFileTree, showInlineCreate } from './fileTree.js';
 import { ICON } from './icons.js';
 import { showConfirm, showAlert, showTokenInput } from './modal.js';
 import {
@@ -9,7 +9,6 @@ import {
   createFile as ghCreate,
   deleteFile as ghDelete,
   renameFile as ghRename,
-  createDir as ghCreateDir,
   getKnownPaths,
   uploadImage as ghUpload,
   RAW_BASE,
@@ -34,8 +33,6 @@ btnGithubFile.style.display = 'none';
 $('toolbar-actions').insertBefore(btnGithubFile, btnSave);
 const btnNew          = $('btn-new-file');
 btnNew.innerHTML      = ICON.plus;
-const btnNewFolder    = $('btn-new-folder');
-btnNewFolder.innerHTML = ICON.folderPlus;
 const btnToken        = $('btn-token');
 const editorContainer = $('editor-container');
 const skeletonLoader  = $('skeleton-loader');
@@ -240,19 +237,6 @@ async function doCreateFile(raw) {
     await openFile(filePath);
   } catch (e) {
     if (e.message !== 'cancelled') setStatus(`파일 생성 실패: ${e.message}`, 'error');
-  }
-}
-
-// ── Create dir ─────────────────────────────────────────────
-
-async function doCreateDir(name) {
-  try {
-    await withToken((token) => ghCreateDir(name, token));
-    setStatus('폴더 생성됨');
-    await refreshTree();
-    saveTreeSnapshot();
-  } catch (e) {
-    if (e.message !== 'cancelled') setStatus(`폴더 생성 실패: ${e.message}`, 'error');
   }
 }
 
@@ -577,7 +561,6 @@ function buildThemePicker(anchorEl) {
 document.querySelector('.app-identity').addEventListener('click', openRootDir);
 btnSave.addEventListener('click', saveFile);
 btnNew.addEventListener('click', () => showInlineCreate(fileTreeEl, doCreateFile));
-btnNewFolder.addEventListener('click', () => showInlineFolderCreate(fileTreeEl, doCreateDir));
 $('btn-theme').addEventListener('click', (e) => buildThemePicker(e.currentTarget));
 btnToken.addEventListener('click', async () => {
   const token = await showTokenInput();

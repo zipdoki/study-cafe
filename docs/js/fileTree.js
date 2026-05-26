@@ -244,42 +244,6 @@ export function showInlineCreate(container, onConfirm, depth = 0) {
   });
 }
 
-export function showInlineFolderCreate(container, onConfirm) {
-  const existing = container.querySelector('.tree-inline-wrapper');
-  if (existing) { existing.remove(); return; }
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'tree-inline-wrapper';
-  wrapper.style.paddingLeft = itemPadding(0);
-  wrapper.innerHTML = ICON.folder;
-
-  const input = document.createElement('input');
-  input.className = 'tree-inline-input';
-  input.type = 'text';
-  input.placeholder = '폴더 이름';
-  input.spellcheck = false;
-  input.autocomplete = 'off';
-
-  wrapper.appendChild(input);
-  container.insertBefore(wrapper, container.firstChild);
-  input.focus();
-
-  function confirm() {
-    const val = input.value.trim().replace(/\/+$/, '');
-    wrapper.remove();
-    if (val) onConfirm(val);
-  }
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') confirm();
-    if (e.key === 'Escape') wrapper.remove();
-  });
-
-  input.addEventListener('blur', () => {
-    setTimeout(() => { if (wrapper.isConnected) wrapper.remove(); }, 200);
-  });
-}
-
 function esc(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
