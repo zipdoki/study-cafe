@@ -343,3 +343,8 @@ OVER(PARTITION BY user_id)  → user_id 기준 정렬 후 처리
 -   동일 Window spec의 중복 컬럼`user_avg_score`, `_we2`)은 옵티마이저가 하나의 Window 실행으로 통합해준다.
     
 -   `isFinalPlan=false` → AQE(Adaptive Query Execution)가 아직 실행 전이라 런타임 통계 반영 전 상태이다.
+    
+
+<!-- empty-paragraph -->
+
+OVER(PARTITION BY user\_id)가 셔플 없이 처리되는 이유는, 이미 OVER()가 앞에서 SinglePartition 셔플을 했기 때문이다.
