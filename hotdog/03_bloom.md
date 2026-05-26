@@ -1,3 +1,0 @@
-# Bloom Filter
-
-<!-- empty-paragraph -->
