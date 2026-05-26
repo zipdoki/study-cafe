@@ -126,3 +126,28 @@ AdaptiveSparkPlan isFinalPlan=false
 ## 왜 COUNT(DISTINCT)는 기본적으로 Monoid가 아닌가?
 
 일반 집계함수들은 Monoid 준동형(Homomorphism) 이 성립한다.
+
+<!-- empty-paragraph -->
+
+> **Monoid 준동형(Homomorphism)**
+> 
+> <!-- empty-paragraph -->
+> 
+> 두 Monoid 사이에 구조를 보존하는 변환이다.
+> 
+> ```
+> f(a ⊕ b) = f(a) ⊕ f(b)
+> ```
+> 
+> "합친 다음 변환" = "각각 변환한 다음 합치기"가 같으면 준동형이다.
+> 
+> <!-- empty-paragraph -->
+> 
+> AVG를 예시로 들자면,
+> 
+> ```
+> f = "리스트를 (합계, 개수)로 변환"
+> 
+> f([1,2,3,4])        = (10, 4)
+> f([1,2]) ⊕ f([3,4]) = (3,2) ⊕ (7,2) = (10, 4)
+> ```
