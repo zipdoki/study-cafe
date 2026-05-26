@@ -90,5 +90,3 @@ object Test extends SparkTestBase {
 ```
 
 <!-- empty-paragraph -->
-
-<!-- empty-paragraph -->
