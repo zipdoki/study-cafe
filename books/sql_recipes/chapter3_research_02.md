@@ -67,7 +67,7 @@ object Test extends SparkTestBase {
   def main(args: Array[String]): Unit = {
     import spark.implicits._
 
-    val x = Seq(
+    Seq(
       ("U001", "A001", 4.0),
       ("U001", "A002", 5.0),
       ("U001", "A003", 5.0),
@@ -78,10 +78,7 @@ object Test extends SparkTestBase {
       ("U003", "A002", 4.0),
       ("U003", "A003", 4.0),
     ).toDF("user_id", "product_id", "score")
-
-    x.createOrReplaceTempView("review")
-
-    x.distinct()
+     .createOrReplaceTempView("review")
 
     spark.sql(
       """SELECT  AVG(score) AS sum
