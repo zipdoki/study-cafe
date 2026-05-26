@@ -782,4 +782,25 @@ AdaptiveSparkPlan isFinalPlan=false
 
 <!-- empty-paragraph -->
 
+```
+== Physical Plan ==
+AdaptiveSparkPlan isFinalPlan=false
++- HashAggregate(keys=[user_id#13], functions=[count(1), sum(score#15), avg(score#15), max(score#15), min(score#15), count(distinct product_id#14)], output=[(1 = 1)#28, user_id#13, total_count#16L, product_count#17L, sum#18, avg#19, max#20, min#21])
+   +- Exchange hashpartitioning(user_id#13, 1), ENSURE_REQUIREMENTS, [plan_id=24]
+      +- HashAggregate(keys=[user_id#13], functions=[merge_count(1), merge_sum(score#15), merge_avg(score#15), merge_max(score#15), merge_min(score#15), partial_count(distinct product_id#14)], output=[user_id#13, count#30L, sum#32, sum#35, count#36L, max#38, min#40, count#43L])
+         +- HashAggregate(keys=[user_id#13, product_id#14], functions=[merge_count(1), merge_sum(score#15), merge_avg(score#15), merge_max(score#15), merge_min(score#15)], output=[user_id#13, product_id#14, count#30L, sum#32, sum#35, count#36L, max#38, min#40])
+            +- Exchange hashpartitioning(user_id#13, product_id#14, 1), ENSURE_REQUIREMENTS, [plan_id=20]
+               +- HashAggregate(keys=[user_id#13, product_id#14], functions=[partial_count(1), partial_sum(score#15), partial_avg(score#15), partial_max(score#15), partial_min(score#15)], output=[user_id#13, product_id#14, count#30L, sum#32, sum#35, count#36L, max#38, min#40])
+                  +- LocalTableScan [user_id#13, product_id#14, score#15]
+```
+
+<!-- empty-paragraph -->
+
+DISTINCT 처리를 위해 정확히 같은 product\_id들이 같은 노드에 모여야 하므로 (user\_id, product\_id) 기준으로 한 번 더 셔플이 발생한다.
+
+| 셔플 | 파티셔닝 키 | 목적 |
+| --- | --- | --- |
+| 1st Exchange | (user_id, product_id) | DISTINCT를 위해 동일 product_id가 같은 노드로 집결 |
+| 2nd Exchange | user_id | user_id별 최종 집계를 위해 재분산 |
+
 #### 집약 함수를 적용한 값과 집약 전의 값을 동시에 다루기
