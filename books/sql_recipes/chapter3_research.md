@@ -347,3 +347,7 @@ DISTRIBUTE BY year
 ```
 
 명시적 재파티셔닝이므로 셔플 발생
+
+# Spark에서 AVG를 처리하는 방법
+
+<!-- empty-paragraph -->
