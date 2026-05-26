@@ -271,6 +271,18 @@ const TextReplacements = Extension.create({
   },
   addKeyboardShortcuts() {
     return {
+      '>': () => {
+        const { state } = this.editor;
+        const { $from, empty, from } = state.selection;
+        if (!empty || $from.parent.type.name !== 'codeBlock') return false;
+        if ($from.parentOffset < 2) return false;
+        const textBefore = $from.parent.textContent.slice($from.parentOffset - 2, $from.parentOffset);
+        if (textBefore !== '--') return false;
+        return this.editor.commands.command(({ tr }) => {
+          tr.replaceWith(from - 2, from, state.schema.text('→'));
+          return true;
+        });
+      },
       ' ': () => {
         const { $from, empty } = this.editor.state.selection;
         if (!empty || $from.parent.type.name !== 'paragraph') return false;
