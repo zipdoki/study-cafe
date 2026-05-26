@@ -161,7 +161,7 @@ export async function createFile(path, token) {
   if (data.content?.sha) shaCache[path] = data.content.sha;
 }
 
-export async function deleteFile(path, token) {
+export async function deleteFile(path, token, _retry = false) {
   const sha = await getSha(path, token);
   if (!sha) throw new Error('파일을 찾을 수 없습니다');
   const res = await fetch(`${BASE}/repos/${REPO}/contents/${encPath(path)}`, {
@@ -170,7 +170,13 @@ export async function deleteFile(path, token) {
     body: JSON.stringify({ message: `Delete ${path}`, sha, branch: BRANCH }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || '삭제 실패');
+  if (!res.ok) {
+    if (!_retry && (data.message || '').includes('does not match')) {
+      delete shaCache[path];
+      return deleteFile(path, token, true);
+    }
+    throw new Error(data.message || '삭제 실패');
+  }
   delete shaCache[path];
 }
 

@@ -365,10 +365,10 @@ function findDirNode(tree, dirPath) {
 }
 
 function insertSorted(arr, node) {
-  // 폴더 먼저, 그 다음 파일 / 각 타입 안에서 알파벳 순
+  // 폴더 먼저, 그 다음 파일 / 각 타입 안에서 알파벳 순 (github.js sortTree와 동일 기준)
   const idx = arr.findIndex(n => {
     if (n.type !== node.type) return node.type === 'dir';
-    return n.name.toLowerCase() > node.name.toLowerCase();
+    return n.name > node.name;
   });
   if (idx === -1) arr.push(node);
   else arr.splice(idx, 0, node);
