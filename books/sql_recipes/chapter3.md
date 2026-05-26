@@ -714,4 +714,70 @@ GROUP BY user_id
 
 <!-- empty-paragraph -->
 
+```scala
+package study.spark
+
+object Test extends SparkTestBase {
+  def main(args: Array[String]): Unit = {
+    import spark.implicits._
+
+    Seq(
+      ("U001", "A001", 4.0),
+      ("U001", "A002", 5.0),
+      ("U001", "A003", 5.0),
+      ("U002", "A001", 3.0),
+      ("U002", "A002", 3.0),
+      ("U002", "A003", 4.0),
+      ("U003", "A001", 5.0),
+      ("U003", "A002", 4.0),
+      ("U003", "A003", 4.0),
+    ).toDF("user_id", "product_id", "score")
+      .createOrReplaceTempView("review")
+
+    spark.sql(
+      """SELECT 1=1
+              , user_id
+              , COUNT(*) AS total_count
+              , COUNT(DISTINCT product_id) AS product_count
+              , SUM(score) AS sum
+              , AVG(score) AS avg
+              , MAX(score) AS max
+              , MIN(score) AS min
+         FROM   review
+         GROUP BY user_id"""
+    ).explain(true)
+  }
+}
+```
+
+<!-- empty-paragraph -->
+
+```
+== Parsed Logical Plan ==
+'Aggregate ['user_id], [unresolvedalias((1 = 1)), 'user_id, 'COUNT(1) AS total_count#16, 'COUNT(distinct 'product_id) AS product_count#17, 'SUM('score) AS sum#18, 'AVG('score) AS avg#19, 'MAX('score) AS max#20, 'MIN('score) AS min#21]
++- 'UnresolvedRelation [review], [], false
+
+== Analyzed Logical Plan ==
+(1 = 1): boolean, user_id: string, total_count: bigint, product_count: bigint, sum: double, avg: double, max: double, min: double
+Aggregate [user_id#13], [(1 = 1) AS (1 = 1)#28, user_id#13, count(1) AS total_count#16L, count(distinct product_id#14) AS product_count#17L, sum(score#15) AS sum#18, avg(score#15) AS avg#19, max(score#15) AS max#20, min(score#15) AS min#21]
++- SubqueryAlias review
+   +- View (`review`, [user_id#13, product_id#14, score#15])
+      +- Project [_1#3 AS user_id#13, _2#4 AS product_id#14, _3#5 AS score#15]
+         +- LocalRelation [_1#3, _2#4, _3#5]
+
+== Optimized Logical Plan ==
+Aggregate [user_id#13], [true AS (1 = 1)#28, user_id#13, count(1) AS total_count#16L, count(distinct product_id#14) AS product_count#17L, sum(score#15) AS sum#18, avg(score#15) AS avg#19, max(score#15) AS max#20, min(score#15) AS min#21]
++- LocalRelation [user_id#13, product_id#14, score#15]
+
+== Physical Plan ==
+AdaptiveSparkPlan isFinalPlan=false
++- HashAggregate(keys=[user_id#13], functions=[count(1), sum(score#15), avg(score#15), max(score#15), min(score#15), count(distinct product_id#14)], output=[(1 = 1)#28, user_id#13, total_count#16L, product_count#17L, sum#18, avg#19, max#20, min#21])
+   +- Exchange hashpartitioning(user_id#13, 1), ENSURE_REQUIREMENTS, [plan_id=24]
+      +- HashAggregate(keys=[user_id#13], functions=[merge_count(1), merge_sum(score#15), merge_avg(score#15), merge_max(score#15), merge_min(score#15), partial_count(distinct product_id#14)], output=[user_id#13, count#30L, sum#32, sum#35, count#36L, max#38, min#40, count#43L])
+         +- HashAggregate(keys=[user_id#13, product_id#14], functions=[merge_count(1), merge_sum(score#15), merge_avg(score#15), merge_max(score#15), merge_min(score#15)], output=[user_id#13, product_id#14, count#30L, sum#32, sum#35, count#36L, max#38, min#40])
+            +- Exchange hashpartitioning(user_id#13, product_id#14, 1), ENSURE_REQUIREMENTS, [plan_id=20]
+               +- HashAggregate(keys=[user_id#13, product_id#14], functions=[partial_count(1), partial_sum(score#15), partial_avg(score#15), partial_max(score#15), partial_min(score#15)], output=[user_id#13, product_id#14, count#30L, sum#32, sum#35, count#36L, max#38, min#40])
+                  +- LocalTableScan [user_id#13, product_id#14, score#15]
+```
+
 #### 집약 함수를 적용한 값과 집약 전의 값을 동시에 다루기
