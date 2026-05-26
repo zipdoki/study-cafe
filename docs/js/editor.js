@@ -5,6 +5,8 @@ import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder@2';
 import Image from 'https://esm.sh/@tiptap/extension-image@2';
 import CodeBlockLowlight from 'https://esm.sh/@tiptap/extension-code-block-lowlight@2';
 import { lowlight } from 'https://esm.sh/lowlight@2';
+import scala from 'https://esm.sh/highlight.js/lib/languages/scala';
+import xml from 'https://esm.sh/highlight.js/lib/languages/xml';
 import { Plugin } from 'https://esm.sh/prosemirror-state@1';
 import { Decoration, DecorationSet } from 'https://esm.sh/prosemirror-view@1';
 import Table from 'https://esm.sh/@tiptap/extension-table@2';
@@ -12,6 +14,13 @@ import TableRow from 'https://esm.sh/@tiptap/extension-table-row@2';
 import TableHeader from 'https://esm.sh/@tiptap/extension-table-header@2';
 import TableCell from 'https://esm.sh/@tiptap/extension-table-cell@2';
 import { TableUI } from './tableUI.js';
+
+// lowlight@2 common bundle에 미포함된 언어 수동 등록
+lowlight.registerLanguage('scala', scala);
+// html은 xml의 alias지만 lowlight가 자동 등록하지 않을 수 있으므로 명시적 등록
+if (!lowlight.listLanguages().includes('html')) {
+  lowlight.registerLanguage('html', xml);
+}
 
 const GITHUB_FILE_BASE = 'https://github.com/zipdoki/study-cafe/blob/pages';
 
