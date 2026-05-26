@@ -1,3 +1,5 @@
+<!-- toc -->
+
 # 3장 데이터 가공을 위한 SQL
 
 ## 5장 하나의 값 조작하기
@@ -692,6 +694,23 @@ AdaptiveSparkPlan isFinalPlan=false
 <!-- empty-paragraph -->
 
 → 핵심: COUNT(DISTINCT col)이 하나라면 Spark가 더 단순한 방식으로 처리할 수 있지만, 서로 다른 컬럼에 대한 DISTINCT가 2개 이상 있으면 Expand 전략이 강제되고 셔플이 필수가 된다. 각 DISTINCT 값이 동일한 리듀서에 모여야 정확한 카운트가 보장되기 때문이다.
+
+<!-- empty-paragraph -->
+
+#### 그루핑한 데이터의 특징량 계산하기
+
+```sql
+SELECT 1=1
+     , user_id
+     , COUNT(*) AS total_count
+     , COUNT(DISTINCT product_id) AS product_count
+     , SUM(score) AS sum
+     , AVG(score) AS avg
+     , MAX(score) AS max
+     , MIN(score) AS min
+FROM   review
+GROUP BY user_id
+```
 
 <!-- empty-paragraph -->
 
