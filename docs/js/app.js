@@ -232,7 +232,8 @@ async function doCreateFile(raw) {
   const filePath = raw.endsWith('.md') ? raw : raw + '.md';
   try {
     await withToken((token) => ghCreate(filePath, token));
-    await refreshTree();
+    localAddFile(filePath);
+    rerender();
     saveTreeSnapshot();
     await openFile(filePath);
   } catch (e) {
@@ -257,7 +258,8 @@ async function deleteFile(filePath) {
       btnSave.disabled = true;
       setStatus('');
     }
-    await refreshTree();
+    localRemoveNode(fileTreeData, filePath);
+    rerender();
     saveTreeSnapshot();
   } catch (e) {
     if (e.message !== 'cancelled') await showAlert(`삭제 실패: ${e.message}`, '오류');
@@ -297,12 +299,13 @@ async function renameItem(oldPath, newName, type) {
       }
     }
     setStatus('이름 변경됨');
-    await refreshTree();
+    localRenameNode(oldPath, newPath);
+    rerender();
     saveTreeSnapshot();
   } catch (e) {
     if (e.message !== 'cancelled') {
       await showAlert(`이름 변경 실패: ${e.message}`, '오류');
-      await refreshTree();
+      await refreshTree(); // 실패 시 서버 상태로 복구
     }
   }
 }
@@ -337,11 +340,83 @@ async function moveItem(oldPath, newPath, type = 'file') {
       }
     }
     setStatus('이동됨');
-    await refreshTree();
+    localRenameNode(oldPath, newPath);
+    rerender();
     saveTreeSnapshot();
   } catch (e) {
     if (e.message !== 'cancelled') setStatus(`이동 실패: ${e.message}`, 'error');
   }
+}
+
+// ── Local tree mutations (GitHub API 재조회 없이 즉시 반영) ─
+
+function rerender() {
+  renderFileTree(fileTreeData, fileTreeEl, openFile, state.currentFile, moveItem, deleteFile, doCreateFile, renameItem, state.activeDir);
+}
+
+function findDirNode(tree, dirPath) {
+  for (const item of tree) {
+    if (item.type !== 'dir') continue;
+    if (item.path === dirPath) return item;
+    const found = findDirNode(item.children, dirPath);
+    if (found) return found;
+  }
+  return null;
+}
+
+function insertSorted(arr, node) {
+  // 폴더 먼저, 그 다음 파일 / 각 타입 안에서 알파벳 순
+  const idx = arr.findIndex(n => {
+    if (n.type !== node.type) return node.type === 'dir';
+    return n.name.toLowerCase() > node.name.toLowerCase();
+  });
+  if (idx === -1) arr.push(node);
+  else arr.splice(idx, 0, node);
+}
+
+function localAddFile(filePath) {
+  const parts = filePath.split('/');
+  const node = { name: parts.at(-1), path: filePath, type: 'file' };
+  const parentArr = parts.length === 1
+    ? fileTreeData
+    : findDirNode(fileTreeData, parts.slice(0, -1).join('/'))?.children;
+  if (parentArr) insertSorted(parentArr, node);
+  else fileTreeData.push(node);
+}
+
+function localRemoveNode(arr, path) {
+  const idx = arr.findIndex(n => n.path === path);
+  if (idx !== -1) { arr.splice(idx, 1); return true; }
+  for (const item of arr) {
+    if (item.type === 'dir' && localRemoveNode(item.children, path)) return true;
+  }
+  return false;
+}
+
+function updateAllPaths(node, oldPrefix, newPrefix) {
+  node.path = newPrefix + node.path.slice(oldPrefix.length);
+  node.name = node.path.split('/').pop();
+  if (node.children) node.children.forEach(c => updateAllPaths(c, oldPrefix, newPrefix));
+}
+
+function localRenameNode(oldPath, newPath) {
+  function extract(arr) {
+    const idx = arr.findIndex(n => n.path === oldPath);
+    if (idx !== -1) return arr.splice(idx, 1)[0];
+    for (const item of arr) {
+      if (item.type === 'dir') { const n = extract(item.children); if (n) return n; }
+    }
+    return null;
+  }
+  const node = extract(fileTreeData);
+  if (!node) return;
+  updateAllPaths(node, oldPath, newPath);
+  const parts = newPath.split('/');
+  const parentArr = parts.length === 1
+    ? fileTreeData
+    : findDirNode(fileTreeData, parts.slice(0, -1).join('/'))?.children;
+  if (parentArr) insertSorted(parentArr, node);
+  else fileTreeData.push(node);
 }
 
 // ── Directory view ─────────────────────────────────────────
