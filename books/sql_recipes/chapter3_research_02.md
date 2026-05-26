@@ -227,15 +227,15 @@ f(파티션1) + f(파티션2) + f(파티션3) = 1 + 1 + 1 = 3  ✓
 
 #### 2\. 조인 전략 동적 변경 (Dynamically Switching Join Strategies)
 
--   실행 계획 수립 시 Sort Merge Join으로 계획됐더라도, 런타임에 한쪽 테이블이 작다고 판단되면 Broadcast Hash Join으로 자동 전환
+-   실행 계획 수립 시 Sort Merge Join으로 계획됐더라도, 런타임에 한쪽 테이블이 작다고 판단되면 Broadcast Hash Join으로 자동 전환한다.
     
--   네트워크 셔플 비용을 크게 절감
+-   네트워크 셔플 비용을 크게 절감시킨다.
     
 
 <!-- empty-paragraph -->
 
 #### 3\. 스큐 조인 최적화 (Dynamically Optimizing Skew Joins)
 
-특정 파티션에 데이터가 쏠리는 데이터 스큐 문제를 런타임에 감지
-
-스큐된 파티션을 여러 개의 작은 파티션으로 분할하여 병렬 처리
+-   특정 파티션에 데이터가 쏠리는 데이터 skew 문제를 런타임에 감지한다.
+    
+-   skewed 파티션을 여러 개의 작은 파티션으로 분할하여 병렬 처리한다.
