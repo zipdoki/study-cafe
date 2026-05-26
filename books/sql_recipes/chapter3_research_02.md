@@ -78,7 +78,7 @@ object Test extends SparkTestBase {
       ("U003", "A002", 4.0),
       ("U003", "A003", 4.0),
     ).toDF("user_id", "product_id", "score")
-     .createOrReplaceTempView("review")
+      .createOrReplaceTempView("review")
 
     spark.sql(
       """SELECT  AVG(score) AS sum
