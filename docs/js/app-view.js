@@ -58,6 +58,10 @@ async function refreshTree() {
 
 // ── Markdown rendering ─────────────────────────────────────
 
+function headingAnchor(text) {
+  return text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w가-힣ㄱ-㆏-]/g, '');
+}
+
 let mermaidReady = false;
 
 function initMermaid() {
@@ -83,9 +87,15 @@ function initMermaid() {
 async function renderContent(markdown) {
   const withRawImages = markdown.replace(/\(\/images\//g, `(${RAW_BASE}/images/`);
 
+  // 빈 단락 복원 (에디터에서 <!-- empty-paragraph -->로 저장됨)
+  const withEmptyParas = withRawImages.replace(/<!-- empty-paragraph -->/g, '<p></p>');
+
+  // 목차 플레이스홀더 치환 (<!-- toc --> → 나중에 렌더링할 div)
+  const withToc = withEmptyParas.replace(/<!-- toc -->/g, '<div data-type="toc-placeholder"></div>');
+
   // Extract mermaid blocks before marked parses them
   const mermaidBlocks = [];
-  const withPlaceholders = withRawImages.replace(/```mermaid\n([\s\S]*?)```/g, (_, code) => {
+  const withPlaceholders = withToc.replace(/```mermaid\n([\s\S]*?)```/g, (_, code) => {
     const idx = mermaidBlocks.length;
     mermaidBlocks.push(code.trim());
     return `<div class="mermaid-placeholder" data-idx="${idx}"></div>`;
@@ -93,6 +103,40 @@ async function renderContent(markdown) {
 
   const html = window.marked ? window.marked.parse(withPlaceholders) : withPlaceholders;
   contentView.innerHTML = `<div class="md-body">${html}</div>`;
+
+  // 헤딩에 앵커 ID 추가
+  contentView.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(h => {
+    if (!h.id) h.id = headingAnchor(h.textContent);
+  });
+
+  // 목차 블록 렌더링
+  contentView.querySelectorAll('[data-type="toc-placeholder"]').forEach(placeholder => {
+    const headings = [...contentView.querySelectorAll('h1, h2, h3, h4, h5, h6')];
+    if (!headings.length) { placeholder.remove(); return; }
+
+    const tocBlock = document.createElement('div');
+    tocBlock.className = 'toc-block';
+    const tocHeader = document.createElement('div');
+    tocHeader.className = 'toc-header';
+    tocHeader.textContent = '목차';
+    tocBlock.appendChild(tocHeader);
+
+    const list = document.createElement('div');
+    list.className = 'toc-list';
+    headings.forEach(h => {
+      const level = parseInt(h.tagName[1]);
+      const item = document.createElement('div');
+      item.className = `toc-item toc-h${level}`;
+      item.style.paddingLeft = `${(level - 1) * 16}px`;
+      item.textContent = h.textContent;
+      item.addEventListener('click', () => {
+        h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      list.appendChild(item);
+    });
+    tocBlock.appendChild(list);
+    placeholder.replaceWith(tocBlock);
+  });
 
   // Syntax highlighting
   if (window.hljs) {
