@@ -522,9 +522,11 @@ async function renameFromPath(newRel) {
   const newPath = newRel.endsWith('.md') ? newRel : newRel + '.md';
   try {
     await withToken((token) => ghRename(state.currentFile, newPath, token));
+    localRenameNode(state.currentFile, newPath);
     state.currentFile = newPath;
     pathDisplay.textContent = state.currentFile;
     setStatus('경로 변경됨');
+    saveTreeSnapshot();
     await refreshTree();
   } catch (e) {
     if (e.message !== 'cancelled') setStatus(`경로 변경 실패: ${e.message}`, 'error');

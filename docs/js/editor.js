@@ -372,37 +372,59 @@ const MarkdownBackspace = Extension.create({
           return this.editor.commands.setParagraph();
         }
 
-        // ── 인라인 마크 시작 위치에서 Backspace → 마크 제거 ──
-        // `` `code` `` → 'c' 앞 커서 + Backspace → code 마크 제거
-        // **bold** → 'b' 앞 커서 + Backspace → bold 마크 제거
+        // ── 인라인 마크 시작/끝 위치에서 Backspace → 마크 제거 ──
+        // |`code` → Backspace → code 마크 제거
+        // `code`| → Backspace → code 마크 제거
         const nodeAfter  = $from.nodeAfter;
         const nodeBefore = $from.nodeBefore;
 
-        if (!nodeAfter || nodeAfter.type.name !== 'text' || !nodeAfter.marks.length) return false;
-
-        // 커서 "앞"에는 없고 "뒤"에만 있는 마크 = 이 위치에서 시작하는 마크
-        const marksBefore  = (nodeBefore?.type.name === 'text') ? nodeBefore.marks : [];
-        const startingMarks = nodeAfter.marks.filter(
-          m => !marksBefore.some(mb => mb.type === m.type)
-        );
-
-        if (!startingMarks.length) return false;
-
-        const { tr } = state;
-        let modified = false;
-
-        for (const mark of startingMarks) {
-          const range = getMarkRange($from, mark.type);
-          // range.from === $from.pos 이면 커서가 마크의 맨 앞임이 확실
-          if (range && range.from === $from.pos) {
-            tr.removeMark(range.from, range.to, mark.type);
-            modified = true;
+        // [1] 마크 시작 위치: 커서 뒤에만 있고 앞에는 없는 마크
+        if (nodeAfter?.type.name === 'text' && nodeAfter.marks.length) {
+          const marksBefore = (nodeBefore?.type.name === 'text') ? nodeBefore.marks : [];
+          const startingMarks = nodeAfter.marks.filter(
+            m => !marksBefore.some(mb => mb.type === m.type)
+          );
+          if (startingMarks.length) {
+            const { tr } = state;
+            let modified = false;
+            for (const mark of startingMarks) {
+              const range = getMarkRange($from, mark.type);
+              if (range && range.from === $from.pos) {
+                tr.removeMark(range.from, range.to, mark.type);
+                modified = true;
+              }
+            }
+            if (modified) {
+              this.editor.view.dispatch(tr);
+              return true;
+            }
           }
         }
 
-        if (!modified) return false;
-        this.editor.view.dispatch(tr);
-        return true;
+        // [2] 마크 끝 위치: 커서 앞에만 있고 뒤에는 없는 마크
+        if (nodeBefore?.type.name === 'text' && nodeBefore.marks.length) {
+          const marksAfter = (nodeAfter?.type.name === 'text') ? nodeAfter.marks : [];
+          const endingMarks = nodeBefore.marks.filter(
+            m => !marksAfter.some(ma => ma.type === m.type)
+          );
+          if (endingMarks.length) {
+            const { tr } = state;
+            let modified = false;
+            for (const mark of endingMarks) {
+              const range = getMarkRange($from, mark.type);
+              if (range && range.to === $from.pos) {
+                tr.removeMark(range.from, range.to, mark.type);
+                modified = true;
+              }
+            }
+            if (modified) {
+              this.editor.view.dispatch(tr);
+              return true;
+            }
+          }
+        }
+
+        return false;
       },
     };
   },
