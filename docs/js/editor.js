@@ -1,4 +1,4 @@
-import { Editor, Node, Extension, InputRule, mergeAttributes } from 'https://esm.sh/@tiptap/core@2';
+import { Editor, Node, Extension, InputRule, mergeAttributes, getMarkRange } from 'https://esm.sh/@tiptap/core@2';
 import Suggestion from 'https://esm.sh/@tiptap/suggestion@2';
 import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2';
 import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder@2';
@@ -345,6 +345,64 @@ const ListItemKeys = Extension.create({
         // 첫 번째 아이템만 lift, 나머지는 ProseMirror 기본 joinBackward에 위임
         if ($from.index(-2) !== 0) return false;
         return this.editor.commands.liftListItem('listItem');
+      },
+    };
+  },
+});
+
+// ── Markdown Backspace: 마크다운 서식 시작에서 Backspace → 서식 제거 ──
+
+const MarkdownBackspace = Extension.create({
+  name: 'markdownBackspace',
+  addKeyboardShortcuts() {
+    return {
+      Backspace: () => {
+        const { state } = this.editor;
+        const { $from, empty } = state.selection;
+        if (!empty) return false;
+
+        // ── 헤딩 시작 위치에서 Backspace → 레벨 감소 (h1이면 단락으로) ──
+        // `### title` 에서 't' 앞에 커서를 두고 Backspace → h2로 감소
+        // `## title` → h1, `# title` → paragraph
+        if ($from.parentOffset === 0 && $from.parent.type.name === 'heading') {
+          const level = $from.parent.attrs.level;
+          if (level > 1) {
+            return this.editor.commands.setHeading({ level: level - 1 });
+          }
+          return this.editor.commands.setParagraph();
+        }
+
+        // ── 인라인 마크 시작 위치에서 Backspace → 마크 제거 ──
+        // `` `code` `` → 'c' 앞 커서 + Backspace → code 마크 제거
+        // **bold** → 'b' 앞 커서 + Backspace → bold 마크 제거
+        const nodeAfter  = $from.nodeAfter;
+        const nodeBefore = $from.nodeBefore;
+
+        if (!nodeAfter || nodeAfter.type.name !== 'text' || !nodeAfter.marks.length) return false;
+
+        // 커서 "앞"에는 없고 "뒤"에만 있는 마크 = 이 위치에서 시작하는 마크
+        const marksBefore  = (nodeBefore?.type.name === 'text') ? nodeBefore.marks : [];
+        const startingMarks = nodeAfter.marks.filter(
+          m => !marksBefore.some(mb => mb.type === m.type)
+        );
+
+        if (!startingMarks.length) return false;
+
+        const { tr } = state;
+        let modified = false;
+
+        for (const mark of startingMarks) {
+          const range = getMarkRange($from, mark.type);
+          // range.from === $from.pos 이면 커서가 마크의 맨 앞임이 확실
+          if (range && range.from === $from.pos) {
+            tr.removeMark(range.from, range.to, mark.type);
+            modified = true;
+          }
+        }
+
+        if (!modified) return false;
+        this.editor.view.dispatch(tr);
+        return true;
       },
     };
   },
@@ -825,6 +883,7 @@ export function initEditor(onUpdate, onSelectionUpdate, onImageUpload, onSave) {
       MermaidBlock,
       TocBlock,
       ListItemKeys,
+      MarkdownBackspace,
       SlashCommands,
       EnsureParagraphAfterBlock,
       MarkdownTableInput,
